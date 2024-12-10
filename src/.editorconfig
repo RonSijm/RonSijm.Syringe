@@ -1,0 +1,3 @@
+[*.cs]
+dotnet_diagnostic.RCS1002.severity = suggestion
+dotnet_diagnostic.*.severity = none

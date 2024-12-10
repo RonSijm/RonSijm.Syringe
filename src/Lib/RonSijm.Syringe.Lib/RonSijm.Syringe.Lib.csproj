@@ -1,0 +1,44 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<Import Project="..\..\..\BuildSettings\SupportedFrameworks.props" />
+	<Import Project="..\..\..\BuildSettings\IncludesForFramework.props" />
+	<Import Project="..\..\..\BuildSettings\NuGetVersioning.props" />
+
+	<PropertyGroup>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<RootNamespace>RonSijm.Syringe</RootNamespace>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<NoWarn>1701;1702;9113</NoWarn>
+		<LangVersion>12</LangVersion>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<Title>RonSijm.Syringe</Title>
+		<Description>A library for to make it easier to do dependency injection. Get it? A Syringe is used to inject things. Yes jokes are better when you have to explain them...</Description>
+		<PackageProjectUrl>https://github.com/RonSijm/RonSijm.Syringe</PackageProjectUrl>
+		<Configurations>Debug;Release</Configurations>
+		<!--<PackageIcon>packaging\logo.png</PackageIcon>-->
+		<PackageReadmeFile>packaging\README.md</PackageReadmeFile>
+		<AssemblyName>RonSijm.Syringe</AssemblyName>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(Configuration)' != 'debug'">
+		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+	</PropertyGroup>
+
+	<ItemGroup Condition="'$(Configuration)' != 'debug'">
+		<!--TODO: <None Include="..\..\..\packaging\logo.png" Pack="true" PackagePath="packaging" />-->
+		<None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <None Remove="RonSijm.Syringe.Lib.csproj.DotSettings" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Features\Registration\Packages\" />
+	</ItemGroup>
+
+</Project>
