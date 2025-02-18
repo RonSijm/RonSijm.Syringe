@@ -33,7 +33,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Examples\RonSijm.Syringe.ExamplesA\RonSijm.Syringe.ExamplesA.csproj" />
     <ProjectReference Include="..\..\Examples\RonSijm.Syringe.ExamplesB\RonSijm.Syringe.ExamplesB.csproj" />
-    <ProjectReference Include="..\..\Lib\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
+    <ProjectReference Include="..\..\Main\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
 
 </Project>

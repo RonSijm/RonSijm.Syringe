@@ -7,11 +7,11 @@ public abstract class ResolveExamplesBNoExceptionsBase : ServiceProviderSetupBas
     [Fact]
     public void Resolve_ClassWith_FuncOfClass()
     {
-        var invocation = ServiceProvider.Invoking(sp => sp.GetRequiredService<ClassWith_FuncOfClass>());
+        var invocation = ServiceProvider.Invoking(sp => sp.GetRequiredService<ClassWith_FuncOfClassB>());
         ClassWith_FuncOfClassExpectations(invocation);
     }
 
-    protected virtual void ClassWith_FuncOfClassExpectations(Func<ClassWith_FuncOfClass> invocation)
+    protected virtual void ClassWith_FuncOfClassExpectations(Func<ClassWith_FuncOfClassB> invocation)
     {
         invocation.Should().NotThrow();
     }
@@ -19,11 +19,11 @@ public abstract class ResolveExamplesBNoExceptionsBase : ServiceProviderSetupBas
     [Fact]
     public void Resolve_ClassWith_LazyOfClass()
     {
-        var invocation = ServiceProvider.Invoking(sp => sp.GetRequiredService<ClassWith_LazyOfClass>());
+        var invocation = ServiceProvider.Invoking(sp => sp.GetRequiredService<ClassWith_LazyOfClassB>());
         ClassWith_LazyOfClassExpectations(invocation);
     }
 
-    protected virtual void ClassWith_LazyOfClassExpectations(Func<ClassWith_LazyOfClass> invocation)
+    protected virtual void ClassWith_LazyOfClassExpectations(Func<ClassWith_LazyOfClassB> invocation)
     {
         invocation.Should().NotThrow();
     }

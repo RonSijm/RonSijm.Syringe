@@ -11,7 +11,7 @@
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <ProjectReference Include="..\..\Lib\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
+	  <ProjectReference Include="..\..\Main\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
 	</ItemGroup>
 
 </Project>

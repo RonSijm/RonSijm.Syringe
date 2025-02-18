@@ -10,4 +10,8 @@
     <LangVersion>12</LangVersion>
 	</PropertyGroup>
 
+	<ItemGroup>
+	  <ProjectReference Include="..\RonSijm.Syringe.ExamplesA\RonSijm.Syringe.ExamplesA.csproj" />
+	</ItemGroup>
+
 </Project>

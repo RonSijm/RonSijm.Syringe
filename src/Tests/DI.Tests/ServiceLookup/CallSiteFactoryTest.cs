@@ -8,7 +8,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.DependencyInjection.Specification.Fakes;
 using MicrosoftCopy.DependencyInjection.Tests.ServiceLookup.Types;
-using RonSijm.Syringe;
 using RonSijm.Syringe.ServiceLookup;
 using Xunit;
 

@@ -25,7 +25,7 @@ public class ServiceProviderEngineScopeTests
     public void RootEngineScopeDisposeTest()
     {
         var services = new ServiceCollection();
-        var sp = new SyringeServiceProvider(services.BuildServiceProvider());
+        var sp = new SyringeServiceProvider(services);
         var s = sp.GetRequiredService<IServiceProvider>();
         ((IDisposable)s).Dispose();
 

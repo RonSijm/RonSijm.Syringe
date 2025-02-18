@@ -13,29 +13,29 @@ Get it? A Syringe is used to inject things. Yes jokes are better when you have t
 <a id='snippet-CodeExample-DefaultServiceCollection-WireByType'></a>
 ```cs
 var serviceCollection = new ServiceCollection();
-serviceCollection.WireImplicit(typeof(Class));
+serviceCollection.WireImplicit(typeof(ClassA));
 var serviceProvider = serviceCollection.BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_Type.cs#L10-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByType' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_Type.cs#L10-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByType' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-DefaultServiceCollection-WireByTypeGeneric -->
 <a id='snippet-CodeExample-DefaultServiceCollection-WireByTypeGeneric'></a>
 ```cs
 var serviceCollection = new ServiceCollection();
-serviceCollection.WireImplicit<Class>();
+serviceCollection.WireImplicit<ClassA>();
 var serviceProvider = serviceCollection.BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_GenericType.cs#L10-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByTypeGeneric' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_GenericType.cs#L10-L16' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByTypeGeneric' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-DefaultServiceCollection-WireByAssembly -->
 <a id='snippet-CodeExample-DefaultServiceCollection-WireByAssembly'></a>
 ```cs
 var serviceCollection = new ServiceCollection();
-var assembly = typeof(Class).Assembly;
+var assembly = typeof(ClassA).Assembly;
 serviceCollection.WireImplicit(assembly, ServiceLifetime.Transient, []);
 var serviceProvider = serviceCollection.BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_Assembly.cs#L10-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByAssembly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/DefaultServiceCollection/InitiationMethods/TestWireImplicit_Assembly.cs#L10-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultServiceCollection-WireByAssembly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Scoped: (default)
@@ -43,9 +43,9 @@ Scoped: (default)
 <!-- snippet: CodeExample-DefaultScope -->
 <a id='snippet-CodeExample-DefaultScope'></a>
 ```cs
-return typeof(ClassWithGuid).WireImplicit().BuildServiceProvider();
+return typeof(ClassWithGuidA).WireImplicit().BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/Attributes/LifetimeTests/LifetimeTests_Scoped.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultScope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/Attributes/LifetimeTests/LifetimeTests_Scoped.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DefaultScope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Transient:
@@ -53,9 +53,9 @@ Transient:
 <!-- snippet: CodeExample-TransientScope -->
 <a id='snippet-CodeExample-TransientScope'></a>
 ```cs
-return typeof(ClassWithGuid).WireImplicit().WithLifetime(ServiceLifetime.Transient).BuildServiceProvider();
+return typeof(ClassWithGuidA).WireImplicit().WithLifetime(ServiceLifetime.Transient).BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/Attributes/LifetimeTests/LifetimeTests_Transient.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-TransientScope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/Attributes/LifetimeTests/LifetimeTests_Transient.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-TransientScope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 Singleton:
@@ -63,28 +63,28 @@ Singleton:
 <!-- snippet: CodeExample-SingletonScope -->
 <a id='snippet-CodeExample-SingletonScope'></a>
 ```cs
-return typeof(ClassWithGuid).WireImplicit().WithLifetime(ServiceLifetime.Singleton).BuildServiceProvider();
+return typeof(ClassWithGuidA).WireImplicit().WithLifetime(ServiceLifetime.Singleton).BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/Attributes/LifetimeTests/LifetimeTests_Singleton.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-SingletonScope' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/Attributes/LifetimeTests/LifetimeTests_Singleton.cs#L10-L12' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-SingletonScope' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 <!-- snippet: CodeExample-Parameters-registerAsTypesOnly -->
 <a id='snippet-CodeExample-Parameters-registerAsTypesOnly'></a>
 ```cs
 var serviceCollection = new ServiceCollection();
-serviceCollection.WireImplicit<Class>(registerAsTypesOnly: [typeof(ClassWithInterface)]);
+serviceCollection.WireImplicit<ClassA>(registerAsTypesOnly: [typeof(ClassWithInterfaceA)]);
 var serviceProvider = serviceCollection.BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/DefaultServiceCollection/Parameters/TestWireImplicit_RegisterAsTypesOnly_ClassWithInterface.cs#L11-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-Parameters-registerAsTypesOnly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/DefaultServiceCollection/Parameters/TestWireImplicit_RegisterAsTypesOnly_ClassWithInterface.cs#L11-L15' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-Parameters-registerAsTypesOnly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-Parameters-registerBothTypeAndInterfaces -->
 <a id='snippet-CodeExample-Parameters-registerBothTypeAndInterfaces'></a>
 ```cs
 var serviceCollection = new ServiceCollection();
-serviceCollection.WireImplicit<Class>(registerBothTypeAndInterfaces: [typeof(ClassWithInterface)]);
+serviceCollection.WireImplicit<ClassA>(registerBothTypeAndInterfaces: [typeof(ClassWithInterfaceA)]);
 var serviceProvider = serviceCollection.BuildServiceProvider();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/DefaultServiceCollection/Parameters/TestWireImplicit_RegisterBothTypeAndInterfaces_ClassWithInterface.cs#L10-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-Parameters-registerBothTypeAndInterfaces' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/DefaultServiceCollection/Parameters/TestWireImplicit_RegisterBothTypeAndInterfaces_ClassWithInterface.cs#L10-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-Parameters-registerBothTypeAndInterfaces' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 ## Extension Methods
@@ -96,33 +96,33 @@ This is an object that keeps track of the last registion that you've made, allow
 <a id='snippet-CodeExample-DontRegisterTypesExtension'></a>
 ```cs
 var serviceCollection = new SyringeServiceCollection();
-serviceCollection.WireImplicit<Class>().DontRegisterTypes(typeof(Class));
+serviceCollection.WireImplicit<ClassA>().DontRegisterTypes(typeof(ClassA));
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/CustomCollection/Parameters/TestWireImplicit_DontRegisterAsTypes_Class.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DontRegisterTypesExtension' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/CustomCollection/Parameters/TestWireImplicit_DontRegisterAsTypes_Class.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DontRegisterTypesExtension' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-DontRegisterTypesWithInterfaces -->
 <a id='snippet-CodeExample-DontRegisterTypesWithInterfaces'></a>
 ```cs
 var serviceCollection = new SyringeServiceCollection();
-serviceCollection.WireImplicit<Class>().DontRegisterTypesWithInterfaces([typeof(InterfaceFor_ClassWithInterface)]);
+serviceCollection.WireImplicit<ClassA>().DontRegisterTypesWithInterfaces([typeof(InterfaceFor_ClassWithInterfaceA)]);
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/CustomCollection/Parameters/TestWireImplicit_DontRegisterTypesWithInterface_InterfaceFor_ClassWithInterface.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DontRegisterTypesWithInterfaces' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/CustomCollection/Parameters/TestWireImplicit_DontRegisterTypesWithInterface_InterfaceFor_ClassWithInterface.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-DontRegisterTypesWithInterfaces' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-RegisterAsTypesOnly -->
 <a id='snippet-CodeExample-RegisterAsTypesOnly'></a>
 ```cs
 var serviceCollection = new SyringeServiceCollection();
-serviceCollection.WireImplicit<Class>().RegisterAsTypesOnly([typeof(ClassWithInterface)]);
+serviceCollection.WireImplicit<ClassA>().RegisterAsTypesOnly([typeof(ClassWithInterfaceA)]);
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/CustomCollection/Parameters/TestWireImplicit_RegisterAsTypesOnly_ClassWithInterface.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-RegisterAsTypesOnly' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/CustomCollection/Parameters/TestWireImplicit_RegisterAsTypesOnly_ClassWithInterface.cs#L11-L14' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-RegisterAsTypesOnly' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 <!-- snippet: CodeExample-RegisterBothTypeAndInterfaces -->
 <a id='snippet-CodeExample-RegisterBothTypeAndInterfaces'></a>
 ```cs
 var serviceCollection = new SyringeServiceCollection();
-serviceCollection.WireImplicit<Class>().RegisterBothTypeAndInterfaces([typeof(ClassWithInterface)]);
+serviceCollection.WireImplicit<ClassA>().RegisterBothTypeAndInterfaces([typeof(ClassWithInterfaceA)]);
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/CustomCollection/Parameters/TestWireImplicit_RegisterBothTypeAndInterfaces_ClassWithInterface.cs#L10-L13' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-RegisterBothTypeAndInterfaces' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/CustomCollection/Parameters/TestWireImplicit_RegisterBothTypeAndInterfaces_ClassWithInterface.cs#L10-L13' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-RegisterBothTypeAndInterfaces' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 
@@ -153,7 +153,7 @@ var appsetting = """
                  }
                  """.ToConfiguration();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/Config/ExamplesC_InterfaceRegistrationNone.cs#L11-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-ConfigurationNotWithInterfaces' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/Config/ExamplesC_InterfaceRegistrationNone.cs#L11-L23' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-ConfigurationNotWithInterfaces' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->
 
 #### Don't register these specific classes:
@@ -178,5 +178,5 @@ var appsetting = """
                  }
                  """.ToConfiguration();
 ```
-<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/Registration/Config/ExamplesC_TypeRegistrationNone.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-ConfigurationNotSpecificClass' title='Start of snippet'>anchor</a></sup>
+<sup><a href='/src/Tests/RonSijm.Syringe.Tests/Features/Tests/MicrosoftServiceProvider/Registration/Config/ExamplesC_TypeRegistrationNone.cs#L11-L24' title='Snippet source file'>snippet source</a> | <a href='#snippet-CodeExample-ConfigurationNotSpecificClass' title='Start of snippet'>anchor</a></sup>
 <!-- endSnippet -->

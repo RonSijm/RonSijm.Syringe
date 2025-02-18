@@ -17,21 +17,29 @@ internal static class ServiceCollectionContainerBuilderTestExtensions
 
         if (mode == ServiceProviderMode.Default)
         {
-            var ms = services.BuildServiceProvider(options);
-            return new SyringeServiceProvider(ms);
+            return new SyringeServiceProvider(services, providerOptions =>
+            {
+                providerOptions.ServiceProviderBuilder = s => s.BuildServiceProvider(options);
+            });
         }
 
-        var provider = new MicrosoftServiceProvider(services, ServiceProviderOptions.Default);
-        ServiceProviderEngine engine = mode switch
+        return new SyringeServiceProvider(services, providerOptions =>
         {
-            ServiceProviderMode.Dynamic => new DynamicServiceProviderEngine(provider),
-            ServiceProviderMode.Runtime => RuntimeServiceProviderEngine.Instance,
-            ServiceProviderMode.Expressions => new ExpressionsServiceProviderEngine(provider),
-            ServiceProviderMode.ILEmit => new ILEmitServiceProviderEngine(provider),
-            _ => throw new NotSupportedException()
-        };
-        provider._engine = engine;
+            providerOptions.ServiceProviderBuilder = serviceCollection =>
+            {
+                var provider = new MicrosoftServiceProvider(serviceCollection, ServiceProviderOptions.Default);
+                ServiceProviderEngine engine = mode switch
+                {
+                    ServiceProviderMode.Dynamic => new DynamicServiceProviderEngine(provider),
+                    ServiceProviderMode.Runtime => RuntimeServiceProviderEngine.Instance,
+                    ServiceProviderMode.Expressions => new ExpressionsServiceProviderEngine(provider),
+                    ServiceProviderMode.ILEmit => new ILEmitServiceProviderEngine(provider),
+                    _ => throw new NotSupportedException()
+                };
+                provider._engine = engine;
 
-        return new SyringeServiceProvider(provider);
+                return provider;
+            };
+        });
     }
 }

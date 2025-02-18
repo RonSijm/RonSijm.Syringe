@@ -1,0 +1,3 @@
+﻿namespace RonSijm.Syringe.ExamplesA;
+
+public class ClassWith_ClassWithInterface_AsInterfaceA(InterfaceFor_ClassWithInterfaceA sut);

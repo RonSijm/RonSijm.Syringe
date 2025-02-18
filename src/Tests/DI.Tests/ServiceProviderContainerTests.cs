@@ -443,7 +443,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
             //forces Dispose ValueTask to be asynchronous and not be immediately completed
             services.AddSingleton<DelayedAsyncDisposableService>();
         }
-        var sp = new SyringeServiceProvider(CreateServiceProvider(services));
+        var sp = new SyringeServiceProvider(services);
 
         var disposable = sp.GetRequiredService<Disposable>();
         var asyncDisposable = sp.GetRequiredService<AsyncDisposable>();
