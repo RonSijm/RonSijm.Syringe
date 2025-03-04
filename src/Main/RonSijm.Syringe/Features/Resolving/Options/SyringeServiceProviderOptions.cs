@@ -10,6 +10,7 @@ public class SyringeServiceProviderOptions
 
     public SyringeServiceCollection Services { get; set; }
 
+    public List<AdditionProvider> AdditionalProviders { get; } = new();
     public List<ISyringeServiceProviderAfterServiceExtension> AfterGetServiceExtensions { get; set; } = [];
     public ServiceProviderOptions ServiceProviderOptions { get; set; }
 
@@ -18,7 +19,7 @@ public class SyringeServiceProviderOptions
         AfterGetServiceExtensions.Add(extension);
     }
 
-    public T GetOptions2<T>() where T : ServiceProviderOptions
+    public T GetOptions<T>() where T : ServiceProviderOptions
     {
         var options = _extendedOptions.FirstOrDefault(x => x is T) as T;
         return options;

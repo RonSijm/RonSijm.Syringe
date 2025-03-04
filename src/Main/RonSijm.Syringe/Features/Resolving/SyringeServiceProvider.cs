@@ -52,32 +52,91 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public object GetService(Type serviceType)
     {
+        if (TryGetServiceFromOverride(serviceType, out var value))
+        {
+            Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(value));
+            return value;
+        }
+
         var service = GetServiceWithoutExtensions(serviceType);
         Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(service));
+
+        if (service == null)
+        {
+            return null;
+        }
+
+        var descriptor = Services.FirstOrDefault(x => x.ServiceType == serviceType);
+
+        if (descriptor is { Lifetime: ServiceLifetime.Singleton })
+        {
+            Options.AdditionalProviders.Add(new SingletonProvider(service));
+        }
 
         return service;
     }
 
     public object GetServiceWithoutExtensions(Type serviceType)
     {
-        try
+        var service = _innerProvider.GetService(serviceType);
+        return service;
+    }
+
+    public bool TryGetServiceFromOverride(Type serviceType, out object value)
+    {
+        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator - Justification: Generates shitty linq
+        foreach (var typeFunctionOverride in Options.AdditionalProviders)
         {
-            var service = _innerProvider.GetService(serviceType);
-            return service;
+            if (!typeFunctionOverride.IsMatch(serviceType))
+            {
+                continue;
+            }
+
+            var result = typeFunctionOverride.Create(serviceType, this);
+            {
+                value = result;
+                return true;
+            }
         }
-        catch (Exception e)
-        
-        {
-            Console.WriteLine("Exception: " + e.ToString());
-            // TODO: Fallback
-            return null;
-        }
+
+        value = null;
+        return false;
     }
 
     public async Task LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
     {
         await foreach (var serviceDescriptor in serviceDescriptors)
         {
+            var existingService = Services.FirstOrDefault(x => x.ServiceType == serviceDescriptor.ServiceType);
+
+            if (existingService != null)
+            {
+                continue;
+            }
+
+            Services.Add(serviceDescriptor);
+        }
+    }
+
+    public void LoadServiceDescriptors(ServiceCollection serviceDescriptors)
+    {
+        foreach (var serviceDescriptor in serviceDescriptors)
+        {
+            Services.Add(serviceDescriptor);
+        }
+    }
+
+    public void ReloadServiceDescriptors(ServiceCollection serviceDescriptors)
+    {
+        foreach (var serviceDescriptor in serviceDescriptors)
+        {
+            var existingService = Services.Where(x => x.ServiceType == serviceDescriptor.ServiceType).ToList();
+
+            foreach (var descriptor in existingService)
+            {
+                Services.Remove(descriptor);
+            }
+
             Services.Add(serviceDescriptor);
         }
     }

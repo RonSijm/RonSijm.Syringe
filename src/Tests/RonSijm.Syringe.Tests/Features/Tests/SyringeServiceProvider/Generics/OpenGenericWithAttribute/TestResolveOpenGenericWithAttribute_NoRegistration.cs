@@ -1,5 +1,4 @@
 ﻿using RonSijm.Syringe.ExamplesB;
-using RonSijm.Syringe.ExamplesB.OpenGeneric;
 using RonSijm.Syringe.ExamplesB.OpenGenericWithAttribute;
 using RonSijm.Syringe.Tests.Features.TestHelpers.Base;
 
