@@ -4,7 +4,7 @@ namespace RonSijm.Syringe;
 
 public class SyringeServiceProviderOptions
 {
-    public Func<IServiceCollection, IServiceProvider> ServiceProviderBuilder { get; set; }
+    public Func<IServiceCollection, MicrosoftServiceProvider> ServiceProviderBuilder { get; set; }
     private readonly List<ServiceProviderOptions> _extendedOptions = new();
     public bool BuildOnConstruct { get; set; } = true;
 

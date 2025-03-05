@@ -6,7 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal readonly struct ServiceIdentifier : IEquatable<ServiceIdentifier>
+public readonly struct ServiceIdentifier : IEquatable<ServiceIdentifier>
 {
     public object ServiceKey { get; }
 

@@ -1,6 +1,6 @@
 ﻿namespace RonSijm.Syringe
 {
-    public class AdditionOpenGenericProvider : AdditionProvider
+    public class AdditionOpenGenericProvider : AdditionByCriteriaProvider
     {
         protected Type OpenGenericType { get; set; }
         protected Func<Type, Type, IServiceProvider, object> FunctionForInnerType { get; set; }

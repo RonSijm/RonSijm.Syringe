@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RonSijm.Syringe.Scope;
+using RonSijm.Syringe.ServiceLookup;
 
 namespace RonSijm.Syringe;
 
 public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
 {
-    private IKeyedServiceProvider _innerKeyedProvider;
-    private IServiceProvider _innerProvider;
+    private MicrosoftServiceProvider _innerProvider;
     public SyringeServiceProviderOptions Options { get; private set; }
     internal IServiceCollection Services { get; private set; }
     
@@ -66,11 +66,11 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             return null;
         }
 
-        var descriptor = Services.FirstOrDefault(x => x.ServiceType == serviceType);
+        var descriptor = _innerProvider.CallSiteFactory.CallSiteCache.FirstOrDefault(x => x.Key.ServiceIdentifier.ServiceType == serviceType);
 
-        if (descriptor is { Lifetime: ServiceLifetime.Singleton })
+        if (descriptor.Value?.Cache is { Location: CallSiteResultCacheLocation.Root })
         {
-            Options.AdditionalProviders.Add(new SingletonProvider(service));
+            Options.AdditionalProviders.Add(new SingletonProvider(serviceType, service));
         }
 
         return service;
@@ -103,8 +103,10 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         return false;
     }
 
-    public async Task LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
+    public async Task<List<ServiceDescriptor>> LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
     {
+        var loadedServiceDescriptor = new List<ServiceDescriptor>();
+
         await foreach (var serviceDescriptor in serviceDescriptors)
         {
             var existingService = Services.FirstOrDefault(x => x.ServiceType == serviceDescriptor.ServiceType);
@@ -115,30 +117,10 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             }
 
             Services.Add(serviceDescriptor);
+            loadedServiceDescriptor.Add(serviceDescriptor);
         }
-    }
 
-    public void LoadServiceDescriptors(ServiceCollection serviceDescriptors)
-    {
-        foreach (var serviceDescriptor in serviceDescriptors)
-        {
-            Services.Add(serviceDescriptor);
-        }
-    }
-
-    public void ReloadServiceDescriptors(ServiceCollection serviceDescriptors)
-    {
-        foreach (var serviceDescriptor in serviceDescriptors)
-        {
-            var existingService = Services.Where(x => x.ServiceType == serviceDescriptor.ServiceType).ToList();
-
-            foreach (var descriptor in existingService)
-            {
-                Services.Remove(descriptor);
-            }
-
-            Services.Add(serviceDescriptor);
-        }
+        return loadedServiceDescriptor;
     }
 
     public void Build()
@@ -146,8 +128,6 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         _innerProvider = Options.ServiceProviderBuilder == null ?
             Services.BuildServiceProvider(Options.ServiceProviderOptions) :
             Options.ServiceProviderBuilder(Services);
-
-        _innerKeyedProvider = _innerProvider as IKeyedServiceProvider;
     }
 
     public void Dispose()
@@ -170,11 +150,11 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public object GetKeyedService(Type serviceType, object serviceKey)
     {
-        return _innerKeyedProvider.GetKeyedService(serviceType, serviceKey);
+        return _innerProvider.GetKeyedService(serviceType, serviceKey);
     }
 
     public object GetRequiredKeyedService(Type serviceType, object serviceKey)
     {
-        return _innerKeyedProvider.GetRequiredKeyedService(serviceType, serviceKey);
+        return _innerProvider.GetRequiredKeyedService(serviceType, serviceKey);
     }
 }
