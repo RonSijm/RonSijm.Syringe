@@ -2,7 +2,7 @@
 
 namespace RonSijm.Syringe;
 
-public class SyringeServiceProviderOptions
+public class SyringeServiceProviderOptions : ServiceProviderOptions
 {
     public Func<IServiceCollection, MicrosoftServiceProvider> ServiceProviderBuilder { get; set; }
     private readonly List<ServiceProviderOptions> _extendedOptions = new();
@@ -12,11 +12,18 @@ public class SyringeServiceProviderOptions
 
     public List<AdditionProvider> AdditionalProviders { get; } = new();
     public List<ISyringeServiceProviderAfterServiceExtension> AfterGetServiceExtensions { get; set; } = [];
+    public List<ISyringeAfterBuildExtension> AfterBuildExtensions { get; set; } = [];
+
     public ServiceProviderOptions ServiceProviderOptions { get; set; }
 
     public void WithAfterGetServiceExtension(ISyringeServiceProviderAfterServiceExtension extension)
     {
         AfterGetServiceExtensions.Add(extension);
+    }
+
+    public void WithAfterBuildExtension(ISyringeAfterBuildExtension extension)
+    {
+        AfterBuildExtensions.Add(extension);
     }
 
     public T GetOptions<T>() where T : ServiceProviderOptions

@@ -9,6 +9,7 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     private MicrosoftServiceProvider _innerProvider;
     public SyringeServiceProviderOptions Options { get; private set; }
     internal IServiceCollection Services { get; private set; }
+    internal List<ServiceDescriptor> NewServices { get; private set; }
     
     public SyringeServiceProvider(IServiceCollection collection, Action<SyringeServiceProviderOptions> options)
     {
@@ -28,6 +29,12 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         Options = options ?? new SyringeServiceProviderOptions();
         Options.ServiceProviderOptions ??= new ServiceProviderOptions() { RegisterServiceScopeFactory = false };
         Services = collection;
+        NewServices = [];
+        
+        foreach (var item in collection)
+        {
+            NewServices.Add(item);
+        }
 
         collection.AddScoped(typeof(Optional<>), typeof(Optional<>));
         collection.AddSingleton<IServiceScopeFactory>(_ => new SyringeServiceScopeFactory(this));
@@ -44,9 +51,19 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             }
         }
 
+        foreach (var extension in Options.AfterGetServiceExtensions)
+        {
+            extension.SetReference(this);
+        }
+
+        foreach (var extension in Options.AfterBuildExtensions)
+        {
+            extension.SetReference(this);
+        }
+
         if (Options.BuildOnConstruct)
         {
-            Build();
+            Build(true);
         }
     }
 
@@ -117,17 +134,23 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             }
 
             Services.Add(serviceDescriptor);
+            NewServices.Add(serviceDescriptor);
             loadedServiceDescriptor.Add(serviceDescriptor);
         }
 
         return loadedServiceDescriptor;
     }
 
-    public void Build()
+    public void Build(bool isInitialBuild)
     {
         _innerProvider = Options.ServiceProviderBuilder == null ?
             Services.BuildServiceProvider(Options.ServiceProviderOptions) :
             Options.ServiceProviderBuilder(Services);
+
+        var newServices = NewServices.ToList();
+        NewServices.Clear();
+
+        Options.AfterBuildExtensions.ForEach(x => x.Process(newServices, isInitialBuild));
     }
 
     public void Dispose()
