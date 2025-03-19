@@ -1,4 +1,4 @@
-﻿using Fluxor.DependencyInjection;
+﻿using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
 using FluxorOptions = RonSijm.Syringe.DependencyInjection.FluxorOptions;
 
