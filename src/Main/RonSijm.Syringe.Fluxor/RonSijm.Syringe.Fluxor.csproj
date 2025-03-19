@@ -7,10 +7,7 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RonSijm.Syringe</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' != 'debug'">
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,7 +17,6 @@
     <Configurations>Debug;Release</Configurations>
     <!--<PackageIcon>packaging\logo.png</PackageIcon>-->
     <PackageReadmeFile>packaging\README.md</PackageReadmeFile>
-    <AssemblyName>RonSijm.Syringe.Fluxor</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'debug'">
@@ -28,15 +24,16 @@
     <None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(UseSourceProjects)' == 'true'">
-    <ProjectReference Include="..\..\..\..\..\Libraries\Fluxor\Source\Lib\Fluxor\Fluxor.csproj" />
-  </ItemGroup>
-
   <ItemGroup Condition="'$(UseSourceProjects)' != 'true'">
     <PackageReference Include="Fluxor" Version="6.*" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(UseSourceProjects)' == 'true'">
+    <ProjectReference Include="..\..\..\..\..\Libraries\Fluxor\Source\Lib\Fluxor\Fluxor.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
+    <ProjectReference Include="..\RonSijm.Syringe.Fluxor.Lib\RonSijm.Syringe.Fluxor.Lib.csproj" />
     <ProjectReference Include="..\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
 

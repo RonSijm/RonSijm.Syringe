@@ -8,7 +8,7 @@ public class SyringeServiceProviderOptions : ServiceProviderOptions
     private readonly List<ServiceProviderOptions> _extendedOptions = new();
     public bool BuildOnConstruct { get; set; } = true;
 
-    public SyringeServiceCollection Services { get; set; }
+    public SyringeServiceCollection Services { get; } = new();
 
     public List<AdditionProvider> AdditionalProviders { get; } = new();
     public List<ISyringeServiceProviderAfterServiceExtension> AfterGetServiceExtensions { get; set; } = [];

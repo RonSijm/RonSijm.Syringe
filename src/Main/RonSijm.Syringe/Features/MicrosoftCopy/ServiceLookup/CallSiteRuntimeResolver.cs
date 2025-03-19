@@ -184,17 +184,3 @@ internal sealed class CallSiteRuntimeResolver : CallSiteVisitor<RuntimeResolverC
         return factoryCallSite.Factory(context.Scope);
     }
 }
-
-internal struct RuntimeResolverContext
-{
-    public ServiceProviderEngineScope Scope { get; set; }
-
-    public RuntimeResolverLock AcquiredLocks { get; set; }
-}
-
-[Flags]
-internal enum RuntimeResolverLock
-{
-    Scope = 1,
-    Root = 2
-}

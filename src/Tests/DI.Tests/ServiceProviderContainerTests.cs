@@ -1132,7 +1132,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
         services.AddTransient(typeof(IBB<>), typeof(GenericBB<>));
         services.AddTransient(typeof(IBB<>), typeof(ConstrainedGenericBB<>));
 
-        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = validateOnBuild });
+        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = validateOnBuild });
         var handlers = serviceProvider
             .GetServices<IBB<AA>>()
             .ToList();

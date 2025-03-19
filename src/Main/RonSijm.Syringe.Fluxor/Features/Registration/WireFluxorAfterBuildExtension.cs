@@ -1,63 +1,80 @@
 ﻿using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace RonSijm.Syringe
-{
-    public class WireFluxorAfterBuildExtension : ISyringeAfterBuildExtension
-    {
-        private SyringeServiceProvider ServiceProvider;
+namespace RonSijm.Syringe;
 
-        public void SetReference(SyringeServiceProvider serviceProvider)
+public class WireFluxorAfterBuildExtension : ISyringeAfterBuildExtension
+{
+    private SyringeServiceProvider _serviceProvider;
+
+    public void SetReference(SyringeServiceProvider serviceProvider)
+    {
+        _serviceProvider = serviceProvider;
+    }
+
+    public void Process(List<ServiceDescriptor> loadedDescriptors, bool isInitialBuild)
+    {
+        if (isInitialBuild || loadedDescriptors == null || !loadedDescriptors.Any())
         {
-            ServiceProvider = serviceProvider;
+            if (_serviceProvider.Options.AfterGetServiceExtensions.Count != 0)
+            {
+                // Since services are create through the activator, we'll resolve them and inject properties.
+                // We don't have to do this if there are no extra AfterGetServiceExtensions
+                HandleAfterServiceExtensions(loadedDescriptors);
+            }
+
+            return;
         }
 
-        public void Process(List<ServiceDescriptor> loadedDescriptors, bool isInitialBuild)
+        AddLoadedFluxorTypesToStore(loadedDescriptors);
+    }
+
+    private void AddLoadedFluxorTypesToStore(List<ServiceDescriptor> loadedDescriptors)
+    {
+        var otherTypes = new List<ServiceDescriptor>();
+        var store = _serviceProvider.GetService<IStore>();
+
+        foreach (var serviceDescriptor in loadedDescriptors)
         {
-            if (isInitialBuild || loadedDescriptors == null || !loadedDescriptors.Any())
+            if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IFeature)))
             {
-                return;
+                var service = _serviceProvider.GetService(serviceDescriptor.ServiceType) as IFeature;
+                store.AddFeature(service);
             }
-
-            var otherTypes = new List<ServiceDescriptor>();
-            var store = ServiceProvider.GetService<IStore>();
-
-            foreach (var serviceDescriptor in loadedDescriptors)
+            else if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IEffect)))
             {
-                if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IFeature)))
-                {
-                    var service = ServiceProvider.GetService(serviceDescriptor.ServiceType) as IFeature;
-                    store.AddFeature(service);
-                }
-                else if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IEffect)))
-                {
-                    var service = ServiceProvider.GetService(serviceDescriptor.ServiceType) as IEffect;
-                    store.AddEffect(service);
-                }
-                else if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IMiddleware)))
-                {
-                    var service = ServiceProvider.GetService(serviceDescriptor.ServiceType) as IMiddleware;
-                    store.AddMiddleware(service);
-                }
-                else
-                {
-                    otherTypes.Add(serviceDescriptor);
-                }
+                var service = _serviceProvider.GetService(serviceDescriptor.ServiceType) as IEffect;
+                store.AddEffect(service);
             }
-
-            var types = otherTypes.Select(x => x.ServiceType).ToList();
-            var filter = AssemblyScanSettings.FilterMethods(types);
-            var reducerMethods = ReducerMethodInfoFactory.Create(filter);
-
-            foreach (var reducerMethodInfo in reducerMethods)
+            else if (serviceDescriptor.ServiceType.IsAssignableTo(typeof(IMiddleware)))
             {
-                var reducerInstance = ReducerWrapperFactory.Create(ServiceProvider, reducerMethodInfo);
+                var service = _serviceProvider.GetService(serviceDescriptor.ServiceType) as IMiddleware;
+                store.AddMiddleware(service);
+            }
+            else
+            {
+                otherTypes.Add(serviceDescriptor);
+            }
+        }
+    }
 
-                var openFeatureType = typeof(IFeature<>);
-                var featureType = openFeatureType.MakeGenericType(reducerMethodInfo.StateType);
-                var feature = ServiceProvider.GetService(featureType) as IFeature;
-                var featureAddReducerMethodInfo = GetAddReducerMethodHelper.GetAddReducerMethod(featureType);
-                featureAddReducerMethodInfo.Invoke(feature, [reducerInstance]);
+    private void HandleAfterServiceExtensions(List<ServiceDescriptor> loadedDescriptors)
+    {
+        var otherTypes = new List<ServiceDescriptor>();
+        var store = _serviceProvider.GetService<IStore>();
+
+        var applicableTypes = loadedDescriptors.Where(x => x.ServiceType.IsAssignableTo(typeof(IFeature)) || x.ServiceType.IsAssignableTo(typeof(IEffect)) || x.ServiceType.IsAssignableTo(typeof(IMiddleware))).ToList();
+
+        foreach (var serviceDescriptor in applicableTypes)
+        {
+            try
+            {
+                var service = _serviceProvider.GetService(serviceDescriptor.ServiceType);
+
+            }
+            catch (Exception)
+            {
+
             }
         }
     }

@@ -49,22 +49,22 @@ public static class ServiceCollectionExtensions
 
         if (registerAsTypesOnly != null)
         {
-            settingsNew.AddRange(registerAsTypesOnly.Select(type => new TypeRegistrationSetting() { Type = type, RegistrationType = RegistrationType.Type }));
+            settingsNew.AddRange(registerAsTypesOnly.Select(type => new TypeRegistrationSetting { Type = type, RegistrationType = RegistrationType.Type }));
         }
 
         if (dontRegisterTypesWithInterfaces != null)
         {
-            settingsNew.AddRange(dontRegisterTypesWithInterfaces.Select(type => new TypeRegistrationSetting() { Type = type, RegistrationType = RegistrationType.None }));
+            settingsNew.AddRange(dontRegisterTypesWithInterfaces.Select(type => new TypeRegistrationSetting { Type = type, RegistrationType = RegistrationType.None }));
         }
 
         if (registerBothTypeAndInterfaces != null)
         {
-            settingsNew.AddRange(registerBothTypeAndInterfaces.Select(type => new TypeRegistrationSetting() { Type = type, RegistrationType = RegistrationType.TypeAndInterface }));
+            settingsNew.AddRange(registerBothTypeAndInterfaces.Select(type => new TypeRegistrationSetting { Type = type, RegistrationType = RegistrationType.TypeAndInterface }));
         }
 
         if (dontRegisterTypes != null)
         {
-            settingsNew.AddRange(dontRegisterTypes.Select(type => new TypeRegistrationSetting() { Type = type, RegistrationType = RegistrationType.None }));
+            settingsNew.AddRange(dontRegisterTypes.Select(type => new TypeRegistrationSetting { Type = type, RegistrationType = RegistrationType.None }));
         }
 
         return WireImplicit(services, targetAssembly, defaultLifetime, settingsNew);

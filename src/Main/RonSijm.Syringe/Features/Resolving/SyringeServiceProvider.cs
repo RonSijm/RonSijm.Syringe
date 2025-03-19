@@ -10,7 +10,15 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     public SyringeServiceProviderOptions Options { get; private set; }
     internal IServiceCollection Services { get; private set; }
     internal List<ServiceDescriptor> NewServices { get; private set; }
-    
+
+    public SyringeServiceProvider(Action<SyringeServiceProviderOptions> options)
+    {
+        var optionsModel = new SyringeServiceProviderOptions();
+        options?.Invoke(optionsModel);
+
+        Construct(new SyringeServiceCollection(), optionsModel);
+    }
+
     public SyringeServiceProvider(IServiceCollection collection, Action<SyringeServiceProviderOptions> options)
     {
         var optionsModel = new SyringeServiceProviderOptions();
@@ -27,19 +35,16 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     private void Construct(IServiceCollection collection, SyringeServiceProviderOptions options)
     {
         Options = options ?? new SyringeServiceProviderOptions();
-        Options.ServiceProviderOptions ??= new ServiceProviderOptions() { RegisterServiceScopeFactory = false };
+        Options.ServiceProviderOptions ??= new ServiceProviderOptions { RegisterServiceScopeFactory = false };
         Services = collection;
         NewServices = [];
-        
+
         foreach (var item in collection)
         {
             NewServices.Add(item);
         }
 
-        collection.AddScoped(typeof(Optional<>), typeof(Optional<>));
-        collection.AddSingleton<IServiceScopeFactory>(_ => new SyringeServiceScopeFactory(this));
-        collection.AddSingleton<IServiceProvider>(this);
-        collection.AddSingleton(this);
+        RegisterSelf(collection);
 
         if (Options.Services != null)
         {
@@ -48,6 +53,7 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             foreach (var collectionFromOption in collectionFromOptions)
             {
                 collection.Add(collectionFromOption);
+                NewServices.Add(collectionFromOption);
             }
         }
 
@@ -67,6 +73,15 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         }
     }
 
+    private void RegisterSelf(IServiceCollection collection)
+    {
+        collection.AddScoped(typeof(Optional<>), typeof(Optional<>));
+        collection.AddSingleton<IServiceScopeFactory>(_ => new SyringeServiceScopeFactory(this));
+        collection.AddSingleton<IServiceProvider>(this);
+        collection.AddSingleton(this);
+        Options.AdditionalProviders.Add(new SingletonProvider(typeof(IServiceProvider), this));
+    }
+
     public object GetService(Type serviceType)
     {
         if (TryGetServiceFromOverride(serviceType, out var value))
@@ -76,21 +91,27 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         }
 
         var service = GetServiceWithoutExtensions(serviceType);
-        Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(service));
 
         if (service == null)
         {
             return null;
         }
 
+        Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(service));
+
+        TryAddDescriptorToCache(serviceType, service);
+
+        return service;
+    }
+
+    public void TryAddDescriptorToCache(Type serviceType, object service)
+    {
         var descriptor = _innerProvider.CallSiteFactory.CallSiteCache.FirstOrDefault(x => x.Key.ServiceIdentifier.ServiceType == serviceType);
 
         if (descriptor.Value?.Cache is { Location: CallSiteResultCacheLocation.Root })
         {
             Options.AdditionalProviders.Add(new SingletonProvider(serviceType, service));
         }
-
-        return service;
     }
 
     public object GetServiceWithoutExtensions(Type serviceType)
@@ -101,8 +122,12 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public bool TryGetServiceFromOverride(Type serviceType, out object value)
     {
-        // ReSharper disable once ForeachCanBePartlyConvertedToQueryUsingAnotherGetEnumerator - Justification: Generates shitty linq
-        foreach (var typeFunctionOverride in Options.AdditionalProviders)
+        return TryGetServiceFromOverride(Options.AdditionalProviders, serviceType, out value);
+    }
+
+    public bool TryGetServiceFromOverride(List<AdditionProvider> providers, Type serviceType, out object value)
+    {
+        foreach (var typeFunctionOverride in providers)
         {
             if (!typeFunctionOverride.IsMatch(serviceType))
             {
@@ -159,6 +184,8 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         {
             disposable.Dispose();
         }
+
+        Options.AdditionalProviders.Clear();
     }
 
     public ValueTask DisposeAsync()

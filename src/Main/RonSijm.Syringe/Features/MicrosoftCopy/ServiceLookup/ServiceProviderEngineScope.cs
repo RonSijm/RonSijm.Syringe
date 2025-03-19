@@ -71,7 +71,10 @@ internal sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvid
 
     public IServiceProvider ServiceProvider => this;
 
-    public IServiceScope CreateScope() => RootProvider.CreateScope();
+    public IServiceScope CreateScope()
+    {
+        return RootProvider.CreateScope();
+    }
 
     [return: NotNullIfNotNull(nameof(service))]
     internal object CaptureDisposable(object service)

@@ -1,0 +1,1 @@
+﻿global using NativeFluxorOptions = Fluxor.DependencyInjection.FluxorOptions;
