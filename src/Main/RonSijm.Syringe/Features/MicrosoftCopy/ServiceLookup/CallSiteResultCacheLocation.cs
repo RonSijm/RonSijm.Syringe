@@ -3,7 +3,7 @@
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal enum CallSiteResultCacheLocation
+public enum CallSiteResultCacheLocation
 {
     Root,
     Scope,

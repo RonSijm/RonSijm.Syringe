@@ -993,7 +993,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
         var scope = serviceProvider.CreateScope();
         var disposable = scope.ServiceProvider.GetService<SyncAsyncDisposable>();
 
-        (scope as IDisposable).Dispose();
+        scope.Dispose();
 
         Assert.True(disposable.DisposeCalled);
     }
@@ -1008,7 +1008,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
         var scope = serviceProvider.CreateScope();
         var disposable = scope.ServiceProvider.GetService<AsyncDisposable>();
 
-        var exception = Assert.Throws<InvalidOperationException>(() => (scope as IDisposable).Dispose());
+        var exception = Assert.Throws<InvalidOperationException>(() => scope.Dispose());
         Assert.Equal(
             "'MicrosoftCopy.DependencyInjection.Tests.ServiceProviderContainerTests+AsyncDisposable' type only implements IAsyncDisposable. Use DisposeAsync to dispose the container.",
             exception.Message);
@@ -1132,7 +1132,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
         services.AddTransient(typeof(IBB<>), typeof(GenericBB<>));
         services.AddTransient(typeof(IBB<>), typeof(ConstrainedGenericBB<>));
 
-        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = validateOnBuild });
+        var serviceProvider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = validateOnBuild });
         var handlers = serviceProvider
             .GetServices<IBB<AA>>()
             .ToList();
@@ -1310,7 +1310,7 @@ public abstract class ServiceProviderContainerTests : DependencyInjectionSpecifi
 
     private async Task<bool> ResolveUniqueServicesConcurrently()
     {
-        var types = new Type[]
+        var types = new[]
         {
             typeof(A), typeof(B), typeof(C), typeof(D), typeof(E),
             typeof(F), typeof(G), typeof(H), typeof(I), typeof(J)

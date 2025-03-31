@@ -7,11 +7,12 @@
 	<PropertyGroup>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<RootNamespace>RonSijm.Syringe</RootNamespace>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<NoWarn>1701;1702;9113</NoWarn>
-		<LangVersion>12</LangVersion>
+		<LangVersion>latest</LangVersion>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -21,13 +22,9 @@
 		<Configurations>Debug;Release</Configurations>
 		<!--<PackageIcon>packaging\logo.png</PackageIcon>-->
 		<PackageReadmeFile>packaging\README.md</PackageReadmeFile>
-		<AssemblyName>RonSijm.Syringe</AssemblyName>
+    <PackageOutputPath>..\..\..\packages</PackageOutputPath>
 	</PropertyGroup>
-
-	<PropertyGroup Condition="'$(Configuration)' != 'debug'">
-		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
-	</PropertyGroup>
-
+  
 	<ItemGroup Condition="'$(Configuration)' != 'debug'">
 		<!--TODO: <None Include="..\..\..\packaging\logo.png" Pack="true" PackagePath="packaging" />-->
 		<None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
@@ -39,6 +36,10 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <Folder Include="Features\Registration\CustomCollection\Models\" />
 	</ItemGroup>
 
 </Project>

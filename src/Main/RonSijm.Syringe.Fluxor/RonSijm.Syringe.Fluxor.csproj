@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\..\BuildSettings\SupportedFrameworks.props" />
+  <Import Project="..\..\..\BuildSettings\NuGetVersioning.props" />
+  <Import Project="..\..\..\BuildSettings\DependencyInjectionAbstractionsForFramework.props" />
+
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>RonSijm.Syringe</RootNamespace>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Title>RonSijm.Syringe.Fluxor</Title>
+    <Description>A Fluxor library for to make it easier to do dependency injection.</Description>
+    <PackageProjectUrl>https://github.com/RonSijm/RonSijm.Syringe</PackageProjectUrl>
+    <Configurations>Debug;Release</Configurations>
+    <!--<PackageIcon>packaging\logo.png</PackageIcon>-->
+    <PackageReadmeFile>packaging\README.md</PackageReadmeFile>
+    <PackageOutputPath>..\..\..\packages</PackageOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(Configuration)' != 'debug'">
+    <!--TODO: <None Include="..\..\..\packaging\logo.png" Pack="true" PackagePath="packaging" />-->
+    <None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseSourceProjects)' != 'true'">
+    <PackageReference Include="Fluxor" Version="6.*" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(UseSourceProjects)' == 'true'">
+    <ProjectReference Include="D:\Libraries\Fluxor\Source\Lib\Fluxor\Fluxor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RonSijm.Syringe.Fluxor.Lib\RonSijm.Syringe.Fluxor.Lib.csproj" />
+    <ProjectReference Include="..\RonSijm.Syringe\RonSijm.Syringe.csproj" />
+  </ItemGroup>
+
+</Project>

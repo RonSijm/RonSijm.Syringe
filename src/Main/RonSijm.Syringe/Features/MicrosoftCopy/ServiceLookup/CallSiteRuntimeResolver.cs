@@ -100,9 +100,12 @@ internal sealed class CallSiteRuntimeResolver : CallSiteVisitor<RuntimeResolverC
     {
         // Check if we are in the situation where scoped service was promoted to singleton
         // and we need to lock the root
-        return context.Scope.IsRootScope ?
-            VisitRootCache(callSite, context) :
-            VisitCache(callSite, context, context.Scope, RuntimeResolverLock.Scope);
+        if (context.Scope.IsRootScope)
+        {
+            return VisitRootCache(callSite, context);
+        }
+
+        return VisitCache(callSite, context, context.Scope, RuntimeResolverLock.Scope);
     }
 
     private object VisitCache(ServiceCallSite callSite, RuntimeResolverContext context, ServiceProviderEngineScope serviceProviderEngine, RuntimeResolverLock lockType)
@@ -183,18 +186,4 @@ internal sealed class CallSiteRuntimeResolver : CallSiteVisitor<RuntimeResolverC
     {
         return factoryCallSite.Factory(context.Scope);
     }
-}
-
-internal struct RuntimeResolverContext
-{
-    public ServiceProviderEngineScope Scope { get; set; }
-
-    public RuntimeResolverLock AcquiredLocks { get; set; }
-}
-
-[Flags]
-internal enum RuntimeResolverLock
-{
-    Scope = 1,
-    Root = 2
 }

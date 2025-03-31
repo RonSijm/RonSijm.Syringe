@@ -1,7 +1,6 @@
-﻿namespace RonSijm.Syringe
+﻿namespace RonSijm.Syringe;
+
+public class DefaultImplementationForTypeAttribute(Type type) : Attribute
 {
-    public class DefaultImplementationForTypeAttribute(Type type) : Attribute
-    {
-        public Type Type { get; init; } = type;
-    }
+    public Type Type { get; init; } = type;
 }

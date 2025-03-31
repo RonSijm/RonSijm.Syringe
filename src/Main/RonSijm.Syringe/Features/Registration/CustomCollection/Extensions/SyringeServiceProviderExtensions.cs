@@ -37,7 +37,7 @@ public static class SyringeServiceProviderExtensions
 
         foreach (var type in config)
         {
-            registration.Descriptor.RegistrationSettings.Add(new TypeRegistrationSetting() { Type = type, RegistrationType = registrationType });
+            registration.Descriptor.RegistrationSettings.Add(new TypeRegistrationSetting { Type = type, RegistrationType = registrationType });
         }
 
         return registration;

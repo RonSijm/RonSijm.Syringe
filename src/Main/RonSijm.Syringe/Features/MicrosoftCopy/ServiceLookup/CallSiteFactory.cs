@@ -11,12 +11,12 @@ using SR = RonSijm.Syringe.Common.SR;
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
+public sealed class CallSiteFactory : IServiceProviderIsKeyedService
 {
     private const int DefaultSlot = 0;
-    private readonly ServiceDescriptor[] _descriptors;
-    private readonly ConcurrentDictionary<ServiceCacheKey, ServiceCallSite> _callSiteCache = new();
-    private readonly Dictionary<ServiceIdentifier, ServiceDescriptorCacheItem> _descriptorLookup = new();
+    private readonly List<ServiceDescriptor> _descriptors;
+    public ConcurrentDictionary<ServiceCacheKey, ServiceCallSite> CallSiteCache = new();
+    public Dictionary<ServiceIdentifier, ServiceDescriptorCacheItem> DescriptorLookup = new();
     private readonly ConcurrentDictionary<ServiceIdentifier, object> _callSiteLocks = new();
 
     private readonly StackGuard _stackGuard;
@@ -24,17 +24,26 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
     public CallSiteFactory(ICollection<ServiceDescriptor> descriptors)
     {
         _stackGuard = new StackGuard();
-        _descriptors = new ServiceDescriptor[descriptors.Count];
-        descriptors.CopyTo(_descriptors, 0);
-
-        Populate();
+        _descriptors = new List<ServiceDescriptor>();
+        AddDescriptors(descriptors);
     }
 
-    internal ServiceDescriptor[] Descriptors => _descriptors;
-
-    private void Populate()
+    public void AddDescriptors(ICollection<ServiceDescriptor> descriptors)
     {
-        foreach (var descriptor in _descriptors)
+        _descriptors.AddRange(descriptors);
+        Populate(_descriptors);
+    }
+
+    internal List<ServiceDescriptor> Descriptors => _descriptors;
+
+    internal void Populate()
+    {
+        Populate(_descriptors);
+    }
+
+    internal void Populate(List<ServiceDescriptor> descriptors)
+    {
+        foreach (var descriptor in descriptors)
         {
             var serviceType = descriptor.ServiceType;
             if (serviceType.IsGenericTypeDefinition)
@@ -81,8 +90,8 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             }
 
             var cacheKey = ServiceIdentifier.FromDescriptor(descriptor);
-            _descriptorLookup.TryGetValue(cacheKey, out var cacheItem);
-            _descriptorLookup[cacheKey] = cacheItem.Add(descriptor);
+            DescriptorLookup.TryGetValue(cacheKey, out var cacheItem);
+            DescriptorLookup[cacheKey] = cacheItem.Add(descriptor);
         }
     }
 
@@ -151,7 +160,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
     // For unit testing
     internal int? GetSlot(ServiceDescriptor serviceDescriptor)
     {
-        if (_descriptorLookup.TryGetValue(ServiceIdentifier.FromDescriptor(serviceDescriptor), out var item))
+        if (DescriptorLookup.TryGetValue(ServiceIdentifier.FromDescriptor(serviceDescriptor), out var item))
         {
             return item.GetSlot(serviceDescriptor);
         }
@@ -160,13 +169,13 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
     }
 
     internal ServiceCallSite GetCallSite(ServiceIdentifier serviceIdentifier, CallSiteChain callSiteChain) =>
-        _callSiteCache.TryGetValue(new ServiceCacheKey(serviceIdentifier, DefaultSlot), out var site) ? site :
+        CallSiteCache.TryGetValue(new ServiceCacheKey(serviceIdentifier, DefaultSlot), out var site) ? site :
             CreateCallSite(serviceIdentifier, callSiteChain);
 
     internal ServiceCallSite GetCallSite(ServiceDescriptor serviceDescriptor, CallSiteChain callSiteChain)
     {
         var serviceIdentifier = ServiceIdentifier.FromDescriptor(serviceDescriptor);
-        if (_descriptorLookup.TryGetValue(serviceIdentifier, out var descriptor))
+        if (DescriptorLookup.TryGetValue(serviceIdentifier, out var descriptor))
         {
             return TryCreateExact(serviceDescriptor, serviceIdentifier, callSiteChain, descriptor.GetSlot(serviceDescriptor));
         }
@@ -208,7 +217,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
 
     private ServiceCallSite TryCreateExact(ServiceIdentifier serviceIdentifier, CallSiteChain callSiteChain)
     {
-        if (_descriptorLookup.TryGetValue(serviceIdentifier, out var descriptor))
+        if (DescriptorLookup.TryGetValue(serviceIdentifier, out var descriptor))
         {
             return TryCreateExact(descriptor.Last, serviceIdentifier, callSiteChain, DefaultSlot);
         }
@@ -217,7 +226,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
         {
             // Check if there is a registration with KeyedService.AnyKey
             var catchAllIdentifier = new ServiceIdentifier(KeyedService.AnyKey, serviceIdentifier.ServiceType);
-            if (_descriptorLookup.TryGetValue(catchAllIdentifier, out descriptor))
+            if (DescriptorLookup.TryGetValue(catchAllIdentifier, out descriptor))
             {
                 return TryCreateExact(descriptor.Last, serviceIdentifier, callSiteChain, DefaultSlot);
             }
@@ -231,7 +240,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
         if (serviceIdentifier.IsConstructedGenericType)
         {
             var genericIdentifier = serviceIdentifier.GetGenericTypeDefinition();
-            if (_descriptorLookup.TryGetValue(genericIdentifier, out var descriptor))
+            if (DescriptorLookup.TryGetValue(genericIdentifier, out var descriptor))
             {
                 return TryCreateOpenGeneric(descriptor.Last, serviceIdentifier, callSiteChain, DefaultSlot, true);
             }
@@ -240,7 +249,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             {
                 // Check if there is a registration with KeyedService.AnyKey
                 var catchAllIdentifier = new ServiceIdentifier(KeyedService.AnyKey, genericIdentifier.ServiceType);
-                if (_descriptorLookup.TryGetValue(catchAllIdentifier, out descriptor))
+                if (DescriptorLookup.TryGetValue(catchAllIdentifier, out descriptor))
                 {
                     return TryCreateOpenGeneric(descriptor.Last, serviceIdentifier, callSiteChain, DefaultSlot, true);
                 }
@@ -253,7 +262,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
     private ServiceCallSite TryCreateEnumerable(ServiceIdentifier serviceIdentifier, CallSiteChain callSiteChain)
     {
         var callSiteKey = new ServiceCacheKey(serviceIdentifier, DefaultSlot);
-        if (_callSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
+        if (CallSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
         {
             return serviceCallSite;
         }
@@ -287,7 +296,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             // will "hide" all the other service registration
             if (!itemType.IsConstructedGenericType &&
                 !KeyedService.AnyKey.Equals(cacheKey.ServiceKey) &&
-                _descriptorLookup.TryGetValue(cacheKey, out var descriptors))
+                DescriptorLookup.TryGetValue(cacheKey, out var descriptors))
             {
                 callSites = new ServiceCallSite[descriptors.Count];
                 for (var i = 0; i < descriptors.Count; i++)
@@ -315,7 +324,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
                 List<KeyValuePair<int, ServiceCallSite>> callSitesByIndex = new();
 
                 var slot = 0;
-                for (var i = _descriptors.Length - 1; i >= 0; i--)
+                for (var i = _descriptors.Count - 1; i >= 0; i--)
                 {
                     if (KeysMatch(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
                     {
@@ -325,7 +334,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
                         }
                     }
                 }
-                for (var i = _descriptors.Length - 1; i >= 0; i--)
+                for (var i = _descriptors.Count - 1; i >= 0; i--)
                 {
                     if (KeysMatch(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
                     {
@@ -354,7 +363,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             var resultCache = (cacheLocation == CallSiteResultCacheLocation.Scope || cacheLocation == CallSiteResultCacheLocation.Root)
                 ? new ResultCache(cacheLocation, callSiteKey)
                 : new ResultCache(CallSiteResultCacheLocation.None, callSiteKey);
-            return _callSiteCache[callSiteKey] = new IEnumerableCallSite(resultCache, itemType, callSites);
+            return CallSiteCache[callSiteKey] = new IEnumerableCallSite(resultCache, itemType, callSites);
         }
         finally
         {
@@ -372,7 +381,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
         if (serviceIdentifier.ServiceType == descriptor.ServiceType)
         {
             var callSiteKey = new ServiceCacheKey(serviceIdentifier, slot);
-            if (_callSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
+            if (CallSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
             {
                 return serviceCallSite;
             }
@@ -401,7 +410,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             }
             callSite.Key = descriptor.ServiceKey;
 
-            return _callSiteCache[callSiteKey] = callSite;
+            return CallSiteCache[callSiteKey] = callSite;
         }
 
         return null;
@@ -420,7 +429,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             serviceIdentifier.ServiceType.GetGenericTypeDefinition() == descriptor.ServiceType)
         {
             var callSiteKey = new ServiceCacheKey(serviceIdentifier, slot);
-            if (_callSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
+            if (CallSiteCache.TryGetValue(callSiteKey, out var serviceCallSite))
             {
                 return serviceCallSite;
             }
@@ -449,7 +458,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
                 return null;
             }
 
-            return _callSiteCache[callSiteKey] = CreateConstructorCallSite(lifetime, serviceIdentifier, closedType, callSiteChain);
+            return CallSiteCache[callSiteKey] = CreateConstructorCallSite(lifetime, serviceIdentifier, closedType, callSiteChain);
         }
 
         return null;
@@ -646,7 +655,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
 
     public void Add(ServiceIdentifier serviceIdentifier, ServiceCallSite serviceCallSite)
     {
-        _callSiteCache[new ServiceCacheKey(serviceIdentifier, DefaultSlot)] = serviceCallSite;
+        CallSiteCache[new ServiceCacheKey(serviceIdentifier, DefaultSlot)] = serviceCallSite;
     }
 
     public bool IsService(Type serviceType) => IsService(new ServiceIdentifier(null, serviceType));
@@ -668,12 +677,12 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
             return false;
         }
 
-        if (_descriptorLookup.ContainsKey(serviceIdentifier))
+        if (DescriptorLookup.ContainsKey(serviceIdentifier))
         {
             return true;
         }
 
-        if (serviceIdentifier.ServiceKey != null && _descriptorLookup.ContainsKey(new ServiceIdentifier(KeyedService.AnyKey, serviceType)))
+        if (serviceIdentifier.ServiceKey != null && DescriptorLookup.ContainsKey(new ServiceIdentifier(KeyedService.AnyKey, serviceType)))
         {
             return true;
         }
@@ -682,7 +691,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
         {
             // We special case IEnumerable since it isn't explicitly registered in the container
             // yet we can manifest instances of it when requested.
-            return genericDefinition == typeof(IEnumerable<>) || _descriptorLookup.ContainsKey(serviceIdentifier.GetGenericTypeDefinition());
+            return genericDefinition == typeof(IEnumerable<>) || DescriptorLookup.ContainsKey(serviceIdentifier.GetGenericTypeDefinition());
         }
 
         // These are the built in service types that aren't part of the list of service descriptors
@@ -711,7 +720,7 @@ internal sealed class CallSiteFactory : IServiceProviderIsKeyedService
         return false;
     }
 
-    private struct ServiceDescriptorCacheItem
+    public struct ServiceDescriptorCacheItem
     {
         [DisallowNull]
         private ServiceDescriptor _item;

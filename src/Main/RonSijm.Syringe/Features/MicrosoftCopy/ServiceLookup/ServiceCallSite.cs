@@ -6,7 +6,7 @@ namespace RonSijm.Syringe.ServiceLookup;
 /// <summary>
 /// Summary description for ServiceCallSite
 /// </summary>
-internal abstract class ServiceCallSite
+public abstract class ServiceCallSite
 {
     protected ServiceCallSite(ResultCache cache)
     {

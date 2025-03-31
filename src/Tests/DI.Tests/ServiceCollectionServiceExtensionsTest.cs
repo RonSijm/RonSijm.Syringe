@@ -112,8 +112,8 @@ public class ServiceCollectionServiceExtensionsTest
         {
             return new TheoryData<Action<IServiceCollection>>
             {
-                { collection => collection.AddSingleton<IFakeService>(_instance) },
-                { collection => collection.AddSingleton(typeof(IFakeService), _instance) },
+                collection => ServiceCollectionServiceExtensions.AddSingleton<IFakeService>(collection, _instance),
+                collection => ServiceCollectionServiceExtensions.AddSingleton(collection, typeof(IFakeService), _instance),
             };
         }
     }

@@ -246,7 +246,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddSingleton<IFoo, Foo>();
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Equal(1, aggregateException.InnerExceptions.Count);
         Assert.Equal("Error while validating the service descriptor 'ServiceType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+IFoo Lifetime: Singleton ImplementationType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+Foo': " +
@@ -263,7 +263,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddScoped<IBar, Bar>();
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Equal(1, aggregateException.InnerExceptions.Count);
         Assert.Equal("Error while validating the service descriptor 'ServiceType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+IFoo Lifetime: Singleton ImplementationType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+Foo': " +
@@ -279,7 +279,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddSingleton<IBoo, Boo>();
 
         // Act + Assert
-        serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true });
+        serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddScoped<IBaz, Baz>();
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Equal(1, aggregateException.InnerExceptions.Count);
         Assert.Equal("Error while validating the service descriptor 'ServiceType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+Foo2 Lifetime: Singleton ImplementationType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+Foo2': " +
@@ -312,7 +312,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddScoped<IBaz, Baz>();
 
         // Act + Assert
-        serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true, ValidateScopes = true });
+        serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true, ValidateScopes = true });
     }
 
     [Fact]
@@ -324,7 +324,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddTransient<IBaz, BazRecursive>();
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Equal(2, aggregateException.InnerExceptions.Count);
         Assert.Equal("Error while validating the service descriptor 'ServiceType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+IFoo Lifetime: Transient ImplementationType: MicrosoftCopy.DependencyInjection.Tests.ServiceProviderValidationTests+Foo': " +
@@ -347,7 +347,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddTransient(typeof(IFakeOpenGenericService<>), typeof(FakeOpenGenericService<>));
 
         // Act + Assert
-        serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true });
+        serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true });
     }
 
     [Fact]
@@ -359,7 +359,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddTransient<IBaz, Baz>();
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Single(aggregateException.InnerExceptions);
 
@@ -379,7 +379,7 @@ public class ServiceProviderValidationTests
         serviceCollection.AddSingleton(typeof(IFoo), new object());
 
         // Act + Assert
-        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions() { ValidateOnBuild = true }));
+        var aggregateException = Assert.Throws<AggregateException>(() => serviceCollection.BuildServiceProvider(new ServiceProviderOptions { ValidateOnBuild = true }));
         Assert.StartsWith("Some services are not able to be constructed", aggregateException.Message);
         Assert.Equal(2, aggregateException.InnerExceptions.Count);
 

@@ -5,8 +5,4 @@ namespace MicrosoftCopy.DependencyInjection.Tests.Fakes;
 
 public class NoCircularDependencySameTypeMultipleTimesC
 {
-    public NoCircularDependencySameTypeMultipleTimesC()
-    {
-
-    }
 }

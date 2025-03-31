@@ -7,10 +7,7 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RonSijm.Syringe</RootNamespace>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)' != 'debug'">
-    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -20,12 +17,12 @@
     <Configurations>Debug;Release</Configurations>
     <!--<PackageIcon>packaging\logo.png</PackageIcon>-->
     <PackageReadmeFile>packaging\README.md</PackageReadmeFile>
-    <AssemblyName>RonSijm.Syringe.Lib</AssemblyName>
+    <PackageOutputPath>..\..\..\packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(Configuration)' != 'debug'">
     <!--TODO: <None Include="..\..\..\packaging\logo.png" Pack="true" PackagePath="packaging" />-->
     <None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
   </ItemGroup>
-
+  
 </Project>

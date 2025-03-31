@@ -5,7 +5,4 @@ namespace MicrosoftCopy.DependencyInjection.Tests.ServiceLookup.Types;
 
 public class TypeWithParameterlessConstructor
 {
-    public TypeWithParameterlessConstructor()
-    {
-    }
 }

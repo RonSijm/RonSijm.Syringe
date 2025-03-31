@@ -6,4 +6,9 @@ public static class NoServiceRegistrationExpectations
     {
         invocation.Should().Throw<InvalidOperationException>().WithMessage($"No service for type '{typeof(T).FullName}' has been registered.");
     }
+
+    public static void NoRegistrationExpectation<T>(this Func<T> invocation, string typeName)
+    {
+        invocation.Should().Throw<InvalidOperationException>().WithMessage($"No service for type '{typeName}' has been registered.");
+    }
 }

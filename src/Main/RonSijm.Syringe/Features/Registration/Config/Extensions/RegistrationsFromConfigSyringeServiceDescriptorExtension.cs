@@ -1,4 +1,6 @@
-﻿namespace RonSijm.Syringe;
+﻿using RonSijm.Syringe.Extendability;
+
+namespace RonSijm.Syringe;
 
 public class RegistrationsFromConfigSyringeServiceDescriptorExtension(DependencyInjectionConfig config) : IWireSyringeServiceDescriptorExtension
 {

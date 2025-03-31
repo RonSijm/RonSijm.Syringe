@@ -1,3 +1,5 @@
+using RonSijm.Syringe.ExamplesA;
+using RonSijm.Syringe.ExamplesB;
 using RonSijm.Syringe.Tests.Features.TestHelpers.Base.ExamplesB;
 
 namespace RonSijm.Syringe.Tests.Features.Tests.MicrosoftServiceProvider.ChainAssembliesTests;
@@ -6,7 +8,7 @@ public class TestWireImplicit_MultipleAssembliesExampleB : ResolveExamplesBDefau
 {
     protected override IServiceProvider SetupServiceProvider()
     {
-        var serviceProvider = typeof(ExamplesA.ClassA).WireImplicit().WireImplicit<ExamplesB.Class1B>().BuildServiceProvider();
+        var serviceProvider = typeof(ClassA).WireImplicit().WireImplicit<Class1B>().BuildServiceProvider();
 
         return serviceProvider;
     }

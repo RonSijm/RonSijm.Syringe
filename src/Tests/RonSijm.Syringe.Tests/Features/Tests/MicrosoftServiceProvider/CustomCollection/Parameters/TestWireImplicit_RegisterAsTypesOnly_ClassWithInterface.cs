@@ -10,7 +10,7 @@ public class TestWireImplicit_RegisterAsTypesOnly_ClassWithInterface : ResolveEx
     {
         #region CodeExample-RegisterAsTypesOnly
         var serviceCollection = new SyringeServiceCollection();
-        serviceCollection.WireImplicit<ClassA>().RegisterAsTypesOnly([typeof(ClassWithInterfaceA)]);
+        serviceCollection.WireImplicit<ClassA>().RegisterAsTypesOnly(typeof(ClassWithInterfaceA));
         #endregion
         var serviceProvider = serviceCollection.BuildServiceProvider();
 

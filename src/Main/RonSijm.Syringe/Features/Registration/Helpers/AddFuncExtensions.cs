@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using RonSijm.Syringe.Interfaces;
 
 namespace RonSijm.Syringe.Helpers;
 

@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal struct ResultCache
+public struct ResultCache
 {
     public static ResultCache None(Type serviceType)
     {

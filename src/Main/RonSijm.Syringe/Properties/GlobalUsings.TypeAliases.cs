@@ -1,0 +1,2 @@
+// Type aliases in a different file, so that you can resharper ignore the file
+global using SettingsForAssembly = (RonSijm.Syringe.AssemblyLoadOptions Options, RonSijm.Syringe.AssemblyOptions assembly);

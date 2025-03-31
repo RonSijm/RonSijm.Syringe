@@ -9,5 +9,5 @@ public abstract class SyringeServiceProviderAfterServiceExtensionBase : ISyringe
         ServiceProvider = serviceProvider;
     }
 
-    public abstract void Decorate(object service);
+    public abstract void Decorate(Type serviceType, object service);
 }

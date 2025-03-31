@@ -5,7 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal readonly struct ServiceCacheKey : IEquatable<ServiceCacheKey>
+public readonly struct ServiceCacheKey : IEquatable<ServiceCacheKey>
 {
     /// <summary>
     /// Type of service being cached

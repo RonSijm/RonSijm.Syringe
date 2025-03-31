@@ -1,15 +1,60 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using RonSijm.Syringe.Scope;
+using RonSijm.Syringe.ServiceLookup;
 
 namespace RonSijm.Syringe;
 
 public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
 {
-    private IKeyedServiceProvider _innerKeyedProvider;
-    private IServiceProvider _innerProvider;
+    private IServiceProvider ScopedProvider { get; set; }
+    private MicrosoftServiceProvider RootProvider { get; set; }
     public SyringeServiceProviderOptions Options { get; private set; }
     internal IServiceCollection Services { get; private set; }
-    
+    internal List<ServiceDescriptor> NewServices { get; private set; }
+    private List<ScopeWrapper> Scopes { get; } = new();
+
+    public SyringeServiceProvider(SyringeServiceProviderOptions options = null)
+    {
+        Construct(new SyringeServiceCollection(), options);
+    }
+
+    private SyringeServiceProvider()
+    {
+    }
+
+    public ScopeWrapper CreateScope()
+    {
+        var scoped = ConstructScoped();
+        var scopeWrapper = new ScopeWrapper(scoped);
+        Scopes.Add(scopeWrapper);
+
+        return scopeWrapper;
+    }
+
+    private SyringeServiceProvider ConstructScoped()
+    {
+        var scope = RootProvider.CreateScope();
+        var scopedProvider = scope.ServiceProvider;
+
+        var scoped = new SyringeServiceProvider()
+        {
+            Options = Options,
+            NewServices = NewServices,
+            Services = Services,
+            RootProvider = RootProvider,
+            ScopedProvider = scopedProvider
+        };
+        return scoped;
+    }
+
+    public SyringeServiceProvider(Action<SyringeServiceProviderOptions> options)
+    {
+        var optionsModel = new SyringeServiceProviderOptions();
+        options?.Invoke(optionsModel);
+
+        Construct(new SyringeServiceCollection(), optionsModel);
+    }
+
     public SyringeServiceProvider(IServiceCollection collection, Action<SyringeServiceProviderOptions> options)
     {
         var optionsModel = new SyringeServiceProviderOptions();
@@ -26,13 +71,16 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     private void Construct(IServiceCollection collection, SyringeServiceProviderOptions options)
     {
         Options = options ?? new SyringeServiceProviderOptions();
-        Options.ServiceProviderOptions ??= new ServiceProviderOptions() { RegisterServiceScopeFactory = false };
+        Options.ServiceProviderOptions ??= new ServiceProviderOptions { RegisterServiceScopeFactory = false };
         Services = collection;
+        NewServices = [];
 
-        collection.AddScoped(typeof(Optional<>), typeof(Optional<>));
-        collection.AddSingleton<IServiceScopeFactory>(_ => new SyringeServiceScopeFactory(this));
-        collection.AddSingleton<IServiceProvider>(this);
-        collection.AddSingleton(this);
+        foreach (var item in collection)
+        {
+            NewServices.Add(item);
+        }
+
+        RegisterSelf(collection);
 
         if (Options.Services != null)
         {
@@ -41,67 +89,219 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             foreach (var collectionFromOption in collectionFromOptions)
             {
                 collection.Add(collectionFromOption);
+                NewServices.Add(collectionFromOption);
             }
+        }
+
+        foreach (var extension in Options.AfterGetServiceExtensions)
+        {
+            extension.SetReference(this);
+        }
+
+        foreach (var extension in Options.AfterBuildExtensions)
+        {
+            extension.SetReference(this);
         }
 
         if (Options.BuildOnConstruct)
         {
-            Build();
+            BuildInitial();
         }
     }
 
-    public object GetService(Type serviceType)
+    private void RegisterSelf(IServiceCollection collection)
     {
+        collection.AddScoped(typeof(Optional<>), typeof(Optional<>));
+        collection.AddSingleton<IServiceScopeFactory>(_ => new SyringeServiceScopeFactory(this));
+        collection.AddSingleton<IServiceProvider>(this);
+        collection.AddSingleton(this);
+        Options.AdditionalProviders.Add(new SingletonProvider(typeof(IServiceProvider), this));
+    }
+
+    public virtual object GetService(Type serviceType)
+    {
+        if (TryGetServiceFromOverride(serviceType, out var value))
+        {
+            Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(serviceType, value));
+            return value;
+        }
+
         var service = GetServiceWithoutExtensions(serviceType);
-        Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(service));
+
+        if (service == null)
+        {
+            return null;
+        }
+
+        Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(serviceType, service));
+
+        TryAddDescriptorToCache(serviceType, service);
 
         return service;
     }
 
-    public object GetServiceWithoutExtensions(Type serviceType)
+    public void TryAddDescriptorToCache(Type serviceType, object service)
     {
-        try
+        var descriptor = GetDescriptor(serviceType);
+
+        if (descriptor.Value?.Cache is { Location: CallSiteResultCacheLocation.Root })
         {
-            var service = _innerProvider.GetService(serviceType);
-            return service;
-        }
-        catch (Exception e)
-        
-        {
-            Console.WriteLine("Exception: " + e.ToString());
-            // TODO: Fallback
-            return null;
+            Options.AdditionalProviders.Add(new SingletonProvider(serviceType, service));
         }
     }
 
-    public async Task LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
+    internal KeyValuePair<ServiceCacheKey, ServiceCallSite> GetDescriptor(Type serviceType)
     {
+        var descriptor = RootProvider.CallSiteFactory.CallSiteCache.FirstOrDefault(x => x.Key.ServiceIdentifier.ServiceType == serviceType);
+        return descriptor;
+    }
+
+    public object GetServiceWithoutExtensions(Type serviceType)
+    {
+        // TODO: Don't know how to fix scope.
+        // Can't even reproduce broken scope in test...
+        //return RootProvider.GetService(serviceType);
+
+        if (ScopedProvider == null)
+        {
+            return RootProvider.GetService(serviceType);
+        }
+
+        var serviceIdentifier = RootProvider.GetServiceIdentifier(serviceType);
+        var serviceAccessor = RootProvider.GetServiceAccessor(serviceIdentifier);
+
+        if (serviceAccessor?.CallSite?.Cache is { Location: CallSiteResultCacheLocation.Root })
+        {
+            return RootProvider.GetService(serviceType);
+        }
+
+        return ScopedProvider.GetService(serviceType);
+    }
+
+    public bool TryGetServiceFromOverride(Type serviceType, out object value)
+    {
+        return TryGetServiceFromOverride(Options.AdditionalProviders, serviceType, out value);
+    }
+
+    public bool TryGetServiceFromOverride(List<AdditionProvider> providers, Type serviceType, out object value)
+    {
+        foreach (var typeFunctionOverride in providers)
+        {
+            if (!typeFunctionOverride.IsMatch(serviceType))
+            {
+                continue;
+            }
+
+            var result = typeFunctionOverride.Create(serviceType, this);
+            {
+                value = result;
+                return true;
+            }
+        }
+
+        value = null;
+        return false;
+    }
+
+    public async Task<List<ServiceDescriptor>> LoadServiceDescriptors(IServiceCollection serviceCollection)
+    {
+        var loadedServiceDescriptor = new List<ServiceDescriptor>();
+
+        foreach (var serviceDescriptor in serviceCollection)
+        {
+            RegisterServiceDescriptor(serviceDescriptor, loadedServiceDescriptor);
+        }
+
+        return loadedServiceDescriptor;
+    }
+
+    public async Task<List<ServiceDescriptor>> LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
+    {
+        var loadedServiceDescriptor = new List<ServiceDescriptor>();
+
         await foreach (var serviceDescriptor in serviceDescriptors)
         {
-            Services.Add(serviceDescriptor);
+            RegisterServiceDescriptor(serviceDescriptor, loadedServiceDescriptor);
         }
+
+        return loadedServiceDescriptor;
+    }
+
+    private void RegisterServiceDescriptor(ServiceDescriptor serviceDescriptor, List<ServiceDescriptor> loadedServiceDescriptor)
+    {
+        var existingService = Services.FirstOrDefault(x => x.ServiceType == serviceDescriptor.ServiceType);
+
+        if (existingService != null)
+        {
+            return;
+        }
+
+        Services.Add(serviceDescriptor);
+        NewServices.Add(serviceDescriptor);
+        loadedServiceDescriptor.Add(serviceDescriptor);
+    }
+
+    private void BuildInitial()
+    {
+        RootProvider = Options.ServiceProviderBuilder == null ?
+            Services.BuildServiceProvider(Options.ServiceProviderOptions) :
+            Options.ServiceProviderBuilder(Services);
+
+        var newServices = NewServices.ToList();
+        NewServices.Clear();
+
+        DoAfterBuild(newServices, true);
     }
 
     public void Build()
     {
-        _innerProvider = Options.ServiceProviderBuilder == null ?
-            Services.BuildServiceProvider(Options.ServiceProviderOptions) :
-            Options.ServiceProviderBuilder(Services);
+        if (RootProvider == null)
+        {
+            BuildInitial();
+            return;
+        }
 
-        _innerKeyedProvider = _innerProvider as IKeyedServiceProvider;
+        var newServices = NewServices.ToList();
+        NewServices.Clear();
+
+        // Add the new descriptors to the cache
+        RootProvider.CallSiteFactory.AddDescriptors(newServices);
+
+        // Remove cached lookups for the new services, because if they were resolved before they were added, they're cached as null.
+        foreach (var identifier in newServices.Select(ServiceIdentifier.FromDescriptor))
+        {
+            RootProvider.ServiceAccessors.TryRemove(identifier, out _);
+        }
+
+        DoAfterBuild(newServices, false);
+    }
+
+    private void DoAfterBuild(List<ServiceDescriptor> newServices, bool isInitialBuild)
+    {
+        Options.AfterBuildExtensions.ForEach(x => x.Process(newServices, isInitialBuild));
+
+        var scopes = Scopes.ToList();
+
+        foreach (var scopeWrapper in Scopes)
+        {
+            var scoped = ConstructScoped();
+            scopeWrapper.ServiceProvider = scoped;
+        }
     }
 
     public void Dispose()
     {
-        if (_innerProvider is IDisposable disposable)
+        if (RootProvider is IDisposable disposable)
         {
             disposable.Dispose();
         }
+
+        Options.AdditionalProviders.Clear();
     }
 
     public ValueTask DisposeAsync()
     {
-        if (_innerProvider is IAsyncDisposable disposable)
+        if (RootProvider is IAsyncDisposable disposable)
         {
             return disposable.DisposeAsync();
         }
@@ -109,13 +309,20 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         return ValueTask.CompletedTask;
     }
 
-    public object GetKeyedService(Type serviceType, object serviceKey)
+    public virtual object GetKeyedService(Type serviceType, object serviceKey)
     {
-        return _innerKeyedProvider.GetKeyedService(serviceType, serviceKey);
+        return RootProvider.GetKeyedService(serviceType, serviceKey);
     }
 
-    public object GetRequiredKeyedService(Type serviceType, object serviceKey)
+    public virtual object GetRequiredKeyedService(Type serviceType, object serviceKey)
     {
-        return _innerKeyedProvider.GetRequiredKeyedService(serviceType, serviceKey);
+        return RootProvider.GetRequiredKeyedService(serviceType, serviceKey);
+    }
+
+    public void DisposeScope(ScopeWrapper scope)
+    {
+        Scopes.Remove(scope);
+        var disposable = scope.ServiceProvider.ScopedProvider as IDisposable;
+        disposable?.Dispose();
     }
 }

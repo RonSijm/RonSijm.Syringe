@@ -7,7 +7,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <LangVersion>12</LangVersion>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +30,8 @@
     <ProjectReference Include="..\..\Examples\RonSijm.Syringe.ExamplesB\RonSijm.Syringe.ExamplesB.csproj" />
     <ProjectReference Include="..\..\Examples\RonSijm.Syringe.ExamplesC\RonSijm.Syringe.ExamplesC.csproj" />
     <ProjectReference Include="..\..\Main\RonSijm.Syringe\RonSijm.Syringe.csproj" />
+    <ProjectReference Include="..\RonSijm.Syringe.Tests.TestObjects\RonSijm.Syringe.Tests.TestObjects.csproj" />
+
   </ItemGroup>
 
   <ItemGroup>

@@ -42,7 +42,7 @@ internal static partial class SR
 #if SYSTEM_PRIVATE_CORELIB || NATIVEAOT
                     InternalGetResourceString(resourceKey);
 #else
-                SR.ResourceManager.GetString(resourceKey);
+                ResourceManager.GetString(resourceKey);
 #endif
         }
         catch (MissingManifestResourceException) { }

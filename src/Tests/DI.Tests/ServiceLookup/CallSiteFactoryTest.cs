@@ -19,8 +19,8 @@ public class CallSiteFactoryTest
     public void GetService_FactoryCallSite_Transient_DoesNotFail()
     {
         var collection = new ServiceCollection();
-        collection.Add(ServiceDescriptor.Describe(typeof(FakeService), (_) => new FakeService(), ServiceLifetime.Transient));
-        collection.Add(ServiceDescriptor.Describe(typeof(IFakeService), (_) => new FakeService(), ServiceLifetime.Transient));
+        collection.Add(ServiceDescriptor.Describe(typeof(FakeService), _ => new FakeService(), ServiceLifetime.Transient));
+        collection.Add(ServiceDescriptor.Describe(typeof(IFakeService), _ => new FakeService(), ServiceLifetime.Transient));
 
         using var serviceProvider = collection.BuildServiceProvider(ServiceProviderMode.Dynamic);
         var expectedType = typeof(FakeService);
@@ -788,7 +788,7 @@ public class CallSiteFactoryTest
         // Class1 -> Class2 -> Class3
         // Class4 -> Class3
         // Class5 -> Class2 -> Class3
-        var types = new Type[] { typeof(Class1), typeof(Class2), typeof(Class3), typeof(Class4), typeof(Class5) };
+        var types = new[] { typeof(Class1), typeof(Class2), typeof(Class3), typeof(Class4), typeof(Class5) };
 
         for (var i = 0; i < 100; i++)
         {
@@ -824,7 +824,7 @@ public class CallSiteFactoryTest
         // ClassA -> ClassB -> ClassC<object>
         // ClassD -> ClassC<string>
         // ClassE -> ClassB -> ClassC<object>
-        var types = new Type[] { typeof(ClassA), typeof(ClassB), typeof(ClassC<>), typeof(ClassD), typeof(ClassE) };
+        var types = new[] { typeof(ClassA), typeof(ClassB), typeof(ClassC<>), typeof(ClassD), typeof(ClassE) };
 
         for (var i = 0; i < 100; i++)
         {
@@ -1001,9 +1001,7 @@ public class CallSiteFactoryTest
 
     private static ConstructorInfo GetConstructor(Type type, Type[] parameterTypes) =>
         type.GetTypeInfo().DeclaredConstructors.First(
-            c => Enumerable.SequenceEqual(
-                c.GetParameters().Select(p => p.ParameterType),
-                parameterTypes));
+            c => c.GetParameters().Select(p => p.ParameterType).SequenceEqual(parameterTypes));
 
     private class Class1 { public Class1(Class2 c2) { } }
     private class Class2 { public Class2(Class3 c3) { } }

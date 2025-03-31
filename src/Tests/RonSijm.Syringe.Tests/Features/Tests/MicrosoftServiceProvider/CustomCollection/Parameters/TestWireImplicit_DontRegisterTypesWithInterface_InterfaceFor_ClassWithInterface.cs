@@ -10,7 +10,7 @@ public class TestWireImplicit_DontRegisterTypesWithInterface_InterfaceFor_ClassW
     {
         #region CodeExample-DontRegisterTypesWithInterfaces
         var serviceCollection = new SyringeServiceCollection();
-        serviceCollection.WireImplicit<ClassA>().DontRegisterTypesWithInterfaces([typeof(InterfaceFor_ClassWithInterfaceA)]);
+        serviceCollection.WireImplicit<ClassA>().DontRegisterTypesWithInterfaces(typeof(InterfaceFor_ClassWithInterfaceA));
         #endregion
 
         var serviceProvider = serviceCollection.BuildServiceProvider();

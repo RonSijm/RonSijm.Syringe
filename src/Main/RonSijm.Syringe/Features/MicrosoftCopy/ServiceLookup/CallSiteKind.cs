@@ -3,7 +3,7 @@
 
 namespace RonSijm.Syringe.ServiceLookup;
 
-internal enum CallSiteKind
+public enum CallSiteKind
 {
     Factory,
 

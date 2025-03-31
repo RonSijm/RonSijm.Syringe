@@ -170,12 +170,12 @@ public static class AssertExtensions
             }
             else
             {
-                AssertExtensions.Throws<TNetFxExceptionType>(action);
+                Throws<TNetFxExceptionType>(action);
             }
         }
         else
         {
-            AssertExtensions.Throws<TNetCoreExceptionType>(expectedParamName, action);
+            Throws<TNetCoreExceptionType>(expectedParamName, action);
         }
     }
 
@@ -192,10 +192,8 @@ public static class AssertExtensions
         {
             return Assert.Throws(netFxExceptionType, action);
         }
-        else
-        {
-            return Assert.Throws(netCoreExceptionType, action);
-        }
+
+        return Assert.Throws(netCoreExceptionType, action);
     }
 
     public static void Throws<TNetCoreExceptionType, TNetFxExceptionType>(string netCoreParamName, string netFxParamName, Action action)
@@ -291,8 +289,7 @@ public static class AssertExtensions
     {
         if (userMessage == null)
             return message;
-        else
-            return $"{message} {userMessage}";
+        return $"{message} {userMessage}";
     }
 
     /// <summary>
@@ -323,7 +320,7 @@ public static class AssertExtensions
         if (actual == null)
             throw new XunitException(
                 greaterThan == null
-                    ? AddOptionalUserMessage($"Expected: <null> to be greater than <null>.", userMessage)
+                    ? AddOptionalUserMessage("Expected: <null> to be greater than <null>.", userMessage)
                     : AddOptionalUserMessage($"Expected: <null> to be greater than {greaterThan}.", userMessage));
 
         if (actual.CompareTo(greaterThan) <= 0)
@@ -341,13 +338,11 @@ public static class AssertExtensions
         {
             if (lessThan == null)
             {
-                throw new XunitException(AddOptionalUserMessage($"Expected: <null> to be less than <null>.", userMessage));
+                throw new XunitException(AddOptionalUserMessage("Expected: <null> to be less than <null>.", userMessage));
             }
-            else
-            {
-                // Null is always less than non-null
-                return;
-            }
+
+            // Null is always less than non-null
+            return;
         }
 
         if (actual.CompareTo(lessThan) >= 0)
@@ -384,11 +379,9 @@ public static class AssertExtensions
                 // We're equal
                 return;
             }
-            else
-            {
-                // Null is always less than non-null
-                throw new XunitException(AddOptionalUserMessage($"Expected: <null> to be greater than or equal to <null>.", userMessage));
-            }
+
+            // Null is always less than non-null
+            throw new XunitException(AddOptionalUserMessage("Expected: <null> to be greater than or equal to <null>.", userMessage));
         }
 
         if (actual.CompareTo(greaterThanOrEqualTo) < 0)
@@ -508,7 +501,7 @@ public static class AssertExtensions
     {
         if (expected.SequenceEqual(actual))
         {
-            throw new XunitException($"Expected: Contents of expected to differ from actual but were the same.");
+            throw new XunitException("Expected: Contents of expected to differ from actual but were the same.");
         }
     }
 
@@ -528,30 +521,28 @@ public static class AssertExtensions
             {
                 throw new XunitException($"Expected: Span of length {expected.Length}{Environment.NewLine}Actual: Span of length {actual.Length}");
             }
-            else
+
+            const int MaxDiffsToShow = 10;      // arbitrary; enough to be useful, hopefully, but still manageable
+
+            var diffCount = 0;
+            var message = $"Showing first {MaxDiffsToShow} differences{Environment.NewLine}";
+            for (var i = 0; i < expected.Length; i++)
             {
-                const int MaxDiffsToShow = 10;      // arbitrary; enough to be useful, hopefully, but still manageable
-
-                var diffCount = 0;
-                var message = $"Showing first {MaxDiffsToShow} differences{Environment.NewLine}";
-                for (var i = 0; i < expected.Length; i++)
+                if (!expected[i].Equals(actual[i]))
                 {
-                    if (!expected[i].Equals(actual[i]))
-                    {
-                        diffCount++;
+                    diffCount++;
 
-                        // Add up to 10 differences to the exception message
-                        if (diffCount <= MaxDiffsToShow)
-                        {
-                            message += $"  Position {i}: Expected: {expected[i]}, Actual: {actual[i]}{Environment.NewLine}";
-                        }
+                    // Add up to 10 differences to the exception message
+                    if (diffCount <= MaxDiffsToShow)
+                    {
+                        message += $"  Position {i}: Expected: {expected[i]}, Actual: {actual[i]}{Environment.NewLine}";
                     }
                 }
-
-                message += $"Total number of differences: {diffCount} out of {expected.Length}";
-
-                throw new XunitException(message);
             }
+
+            message += $"Total number of differences: {diffCount} out of {expected.Length}";
+
+            throw new XunitException(message);
         }
     }
 
@@ -725,26 +716,28 @@ public static class AssertExtensions
         {
             return "NaN".PadLeft(10);
         }
-        else if (float.IsPositiveInfinity(value))
+
+        if (float.IsPositiveInfinity(value))
         {
             return "+\u221E".PadLeft(10);
         }
-        else if (float.IsNegativeInfinity(value))
+
+        if (float.IsNegativeInfinity(value))
         {
             return "-\u221E".PadLeft(10);
         }
-        else if (IsNegativeZero(value))
+
+        if (IsNegativeZero(value))
         {
             return "-0.0".PadLeft(10);
         }
-        else if (IsPositiveZero(value))
+
+        if (IsPositiveZero(value))
         {
             return "+0.0".PadLeft(10);
         }
-        else
-        {
-            return $"{value,10:G9}";
-        }
+
+        return $"{value,10:G9}";
     }
 
     static string ToStringPadded(double value)
@@ -753,26 +746,28 @@ public static class AssertExtensions
         {
             return "NaN".PadLeft(20);
         }
-        else if (double.IsPositiveInfinity(value))
+
+        if (double.IsPositiveInfinity(value))
         {
             return "+\u221E".PadLeft(20);
         }
-        else if (double.IsNegativeInfinity(value))
+
+        if (double.IsNegativeInfinity(value))
         {
             return "-\u221E".PadLeft(20);
         }
-        else if (IsNegativeZero(value))
+
+        if (IsNegativeZero(value))
         {
             return "-0.0".PadLeft(20);
         }
-        else if (IsPositiveZero(value))
+
+        if (IsPositiveZero(value))
         {
             return "+0.0".PadLeft(20);
         }
-        else
-        {
-            return $"{value,20:G17}";
-        }
+
+        return $"{value,20:G17}";
     }
 
 #if NET
@@ -782,26 +777,28 @@ public static class AssertExtensions
         {
             return "NaN".PadLeft(5);
         }
-        else if (Half.IsPositiveInfinity(value))
+
+        if (Half.IsPositiveInfinity(value))
         {
             return "+\u221E".PadLeft(5);
         }
-        else if (Half.IsNegativeInfinity(value))
+
+        if (Half.IsNegativeInfinity(value))
         {
             return "-\u221E".PadLeft(5);
         }
-        else if (IsNegativeZero(value))
+
+        if (IsNegativeZero(value))
         {
             return "-0.0".PadLeft(5);
         }
-        else if (IsPositiveZero(value))
+
+        if (IsPositiveZero(value))
         {
             return "+0.0".PadLeft(5);
         }
-        else
-        {
-            return $"{value,5:G5}";
-        }
+
+        return $"{value,5:G5}";
     }
 #endif
 
@@ -821,7 +818,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (double.IsNaN(actual))
+
+        if (double.IsNaN(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -835,7 +833,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (double.IsNegativeInfinity(actual))
+
+        if (double.IsNegativeInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -849,7 +848,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (double.IsPositiveInfinity(actual))
+
+        if (double.IsPositiveInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -934,7 +934,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (float.IsNaN(actual))
+
+        if (float.IsNaN(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -948,7 +949,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (float.IsNegativeInfinity(actual))
+
+        if (float.IsNegativeInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -962,7 +964,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (float.IsPositiveInfinity(actual))
+
+        if (float.IsPositiveInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -1048,7 +1051,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (Half.IsNaN(actual))
+
+        if (Half.IsNaN(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -1062,7 +1066,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (Half.IsNegativeInfinity(actual))
+
+        if (Half.IsNegativeInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
@@ -1076,7 +1081,8 @@ public static class AssertExtensions
 
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }
-        else if (Half.IsPositiveInfinity(actual))
+
+        if (Half.IsPositiveInfinity(actual))
         {
             throw EqualException.ForMismatchedValues(ToStringPadded(expected), ToStringPadded(actual));
         }

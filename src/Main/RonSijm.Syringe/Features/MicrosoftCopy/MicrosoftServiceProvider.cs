@@ -27,7 +27,7 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
 
     private bool _disposed;
 
-    private readonly ConcurrentDictionary<ServiceIdentifier, ServiceAccessor> _serviceAccessors;
+    internal readonly ConcurrentDictionary<ServiceIdentifier, ServiceAccessor> ServiceAccessors;
 
     internal CallSiteFactory CallSiteFactory { get; }
 
@@ -52,7 +52,7 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         Root = new ServiceProviderEngineScope(this, isRootScope: true);
         _engine = GetEngine();
         _createServiceAccessor = CreateServiceAccessor;
-        _serviceAccessors = new ConcurrentDictionary<ServiceIdentifier, ServiceAccessor>();
+        ServiceAccessors = new ConcurrentDictionary<ServiceIdentifier, ServiceAccessor>();
 
         CallSiteFactory = new CallSiteFactory(serviceDescriptors);
         // The list of built in services that aren't part of the list of service descriptors
@@ -102,7 +102,17 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
     /// </summary>
     /// <param name="serviceType">The type of the service to get.</param>
     /// <returns>The service that was produced.</returns>
-    public object GetService(Type serviceType) => GetService(ServiceIdentifier.FromServiceType(serviceType), Root);
+    public object GetService(Type serviceType)
+    {
+        var fromServiceType = GetServiceIdentifier(serviceType);
+        return GetService(fromServiceType, Root);
+    }
+
+    public ServiceIdentifier GetServiceIdentifier(Type serviceType)
+    {
+        var fromServiceType = ServiceIdentifier.FromServiceType(serviceType);
+        return fromServiceType;
+    }
 
     /// <summary>
     /// Gets the service object of the specified type with the specified key.
@@ -177,12 +187,19 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         {
             ThrowHelper.ThrowObjectDisposedException();
         }
-        var serviceAccessor = _serviceAccessors.GetOrAdd(serviceIdentifier, _createServiceAccessor);
+        var serviceAccessor = GetServiceAccessor(serviceIdentifier);
+
         OnResolve(serviceAccessor.CallSite, serviceProviderEngineScope);
         DependencyInjectionEventSource.Log.ServiceResolved(this, serviceIdentifier.ServiceType);
         var result = serviceAccessor.RealizedService?.Invoke(serviceProviderEngineScope);
-        System.Diagnostics.Debug.Assert(result is null || CallSiteFactory.IsService(serviceIdentifier));
+        Debug.Assert(result is null || CallSiteFactory.IsService(serviceIdentifier));
         return result;
+    }
+
+    public ServiceAccessor GetServiceAccessor(ServiceIdentifier serviceIdentifier)
+    {
+        var serviceAccessor = ServiceAccessors.GetOrAdd(serviceIdentifier, _createServiceAccessor);
+        return serviceAccessor;
     }
 
     private void ValidateService(ServiceDescriptor descriptor)
@@ -229,7 +246,7 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
 
     internal void ReplaceServiceAccessor(ServiceCallSite callSite, Func<ServiceProviderEngineScope, object> accessor)
     {
-        _serviceAccessors[new ServiceIdentifier(callSite.Key, callSite.ServiceType)] = new ServiceAccessor
+        ServiceAccessors[new ServiceIdentifier(callSite.Key, callSite.ServiceType)] = new ServiceAccessor
         {
             CallSite = callSite,
             RealizedService = accessor
@@ -287,7 +304,7 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         public bool IsScope => !_serviceProvider.Root.IsRootScope;
     }
 
-    private sealed class ServiceAccessor
+    public sealed class ServiceAccessor
     {
         public ServiceCallSite CallSite { get; set; }
         public Func<ServiceProviderEngineScope, object> RealizedService { get; set; }

@@ -116,8 +116,8 @@ public class ServiceCollectionKeyedServiceExtensionsTest
         {
             return new TheoryData<Action<IServiceCollection>>
             {
-                { collection => collection.AddKeyedSingleton<IFakeService>("service", _instance) },
-                { collection => collection.AddKeyedSingleton(typeof(IFakeService), "service", _instance) },
+                collection => ServiceCollectionServiceExtensions.AddKeyedSingleton<IFakeService>(collection, "service", _instance),
+                collection => ServiceCollectionServiceExtensions.AddKeyedSingleton(collection, typeof(IFakeService), "service", _instance),
             };
         }
     }
@@ -501,12 +501,12 @@ public class ServiceCollectionKeyedServiceExtensionsTest
 
             return new TheoryData<ServiceDescriptor>
             {
-                { ServiceDescriptor.KeyedTransient<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedTransient<IFakeService>(key, (_, _) => new FakeService()) },
-                { ServiceDescriptor.KeyedScoped<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedScoped<IFakeService>(key, (_, _) => new FakeService()) },
-                { ServiceDescriptor.KeyedSingleton<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedSingleton<IFakeService>(key, new FakeService()) },
+                ServiceDescriptor.KeyedTransient<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedTransient<IFakeService>(key, (_, _) => new FakeService()),
+                ServiceDescriptor.KeyedScoped<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedScoped<IFakeService>(key, (_, _) => new FakeService()),
+                ServiceDescriptor.KeyedSingleton<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedSingleton<IFakeService>(key, new FakeService()),
             };
         }
     }
@@ -532,12 +532,12 @@ public class ServiceCollectionKeyedServiceExtensionsTest
 
             return new TheoryData<ServiceDescriptor>
             {
-                { ServiceDescriptor.KeyedTransient<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedTransient<IFakeService>(key, (_, _) => new FakeService()) },
-                { ServiceDescriptor.KeyedScoped<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedScoped<IFakeService>(key, (_, _) => new FakeService()) },
-                { ServiceDescriptor.KeyedSingleton<IFakeService, FakeService>(key) },
-                { ServiceDescriptor.KeyedSingleton<IFakeService>(key, new FakeService()) },
+                ServiceDescriptor.KeyedTransient<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedTransient<IFakeService>(key, (_, _) => new FakeService()),
+                ServiceDescriptor.KeyedScoped<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedScoped<IFakeService>(key, (_, _) => new FakeService()),
+                ServiceDescriptor.KeyedSingleton<IFakeService, FakeService>(key),
+                ServiceDescriptor.KeyedSingleton<IFakeService>(key, new FakeService()),
             };
         }
     }

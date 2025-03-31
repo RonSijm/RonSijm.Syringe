@@ -9,7 +9,7 @@ public class TestWireImplicit_RegisterBothTypeAndInterfaces_ClassWithInterface :
     {
         #region CodeExample-RegisterBothTypeAndInterfaces
         var serviceCollection = new SyringeServiceCollection();
-        serviceCollection.WireImplicit<ClassA>().RegisterBothTypeAndInterfaces([typeof(ClassWithInterfaceA)]);
+        serviceCollection.WireImplicit<ClassA>().RegisterBothTypeAndInterfaces(typeof(ClassWithInterfaceA));
         #endregion
         var serviceProvider = serviceCollection.BuildServiceProvider();
 

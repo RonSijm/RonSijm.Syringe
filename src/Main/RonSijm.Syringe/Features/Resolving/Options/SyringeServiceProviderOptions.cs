@@ -2,30 +2,49 @@
 
 namespace RonSijm.Syringe;
 
-public class SyringeServiceProviderOptions
+public class SyringeServiceProviderOptions : ServiceProviderOptions
 {
-    public Func<IServiceCollection, IServiceProvider> ServiceProviderBuilder { get; set; }
-    private readonly List<ServiceProviderOptions> _extendedOptions = new();
+    public Func<IServiceCollection, MicrosoftServiceProvider> ServiceProviderBuilder { get; set; }
+    public readonly List<object> ExtendedOptions = new();
     public bool BuildOnConstruct { get; set; } = true;
 
-    public SyringeServiceCollection Services { get; set; }
-
+    public SyringeServiceCollection Services { get; } = new();
+    public List<AdditionProvider> AdditionalProviders { get; } = new();
     public List<ISyringeServiceProviderAfterServiceExtension> AfterGetServiceExtensions { get; set; } = [];
+    public List<ISyringeAfterBuildExtension> AfterBuildExtensions { get; set; } = [];
+
     public ServiceProviderOptions ServiceProviderOptions { get; set; }
 
-    public void WithAfterGetServiceExtension(ISyringeServiceProviderAfterServiceExtension extension)
+    public void WithAfterGetService(ISyringeServiceProviderAfterServiceExtension extension)
     {
         AfterGetServiceExtensions.Add(extension);
     }
 
-    public T GetOptions2<T>() where T : ServiceProviderOptions
+    public void WithAfterGetService<T>() where T : ISyringeServiceProviderAfterServiceExtension, new()
     {
-        var options = _extendedOptions.FirstOrDefault(x => x is T) as T;
+        var instance = new T();
+        AfterGetServiceExtensions.Add(instance);
+    }
+
+    public void WithAfterBuildExtension(ISyringeAfterBuildExtension extension)
+    {
+        AfterBuildExtensions.Add(extension);
+    }
+
+    public void WithAfterBuildExtension<T>() where T : ISyringeAfterBuildExtension, new()
+    {
+        var instance = new T();
+        AfterBuildExtensions.Add(instance);
+    }
+
+    public T GetOptions<T>() where T : class
+    {
+        var options = ExtendedOptions?.FirstOrDefault(x => x is T) as T;
         return options;
     }
 
     public void AddOption(ServiceProviderOptions option)
     {
-        _extendedOptions.Add(option);
+        ExtendedOptions.Add(option);
     }
 }

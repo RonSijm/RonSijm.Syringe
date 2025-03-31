@@ -11,7 +11,7 @@ namespace RonSijm.Syringe.ServiceLookup;
 
 [DebuggerDisplay("{DebuggerToString(),nq}")]
 [DebuggerTypeProxy(typeof(ServiceProviderEngineScopeDebugView))]
-internal sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvider, IKeyedServiceProvider, IAsyncDisposable, IServiceScopeFactory
+public sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvider, IKeyedServiceProvider, IAsyncDisposable, IServiceScopeFactory
 {
     // For testing and debugging only
     internal IList<object> Disposables => _disposables ?? (IList<object>)Array.Empty<object>();
@@ -46,7 +46,14 @@ internal sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvid
             ThrowHelper.ThrowObjectDisposedException();
         }
 
-        return RootProvider.GetService(ServiceIdentifier.FromServiceType(serviceType), this);
+        var serviceIdentifier = GetServiceIdentifier(serviceType);
+        return RootProvider.GetService(serviceIdentifier, this);
+    }
+
+    public ServiceIdentifier GetServiceIdentifier(Type serviceType)
+    {
+        var serviceIdentifier = ServiceIdentifier.FromServiceType(serviceType);
+        return serviceIdentifier;
     }
 
     public object GetKeyedService(Type serviceType, object serviceKey)
@@ -71,7 +78,10 @@ internal sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvid
 
     public IServiceProvider ServiceProvider => this;
 
-    public IServiceScope CreateScope() => RootProvider.CreateScope();
+    public IServiceScope CreateScope()
+    {
+        return RootProvider.CreateScope();
+    }
 
     [return: NotNullIfNotNull(nameof(service))]
     internal object CaptureDisposable(object service)
@@ -230,14 +240,14 @@ internal sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvid
 
     internal string DebuggerToString()
     {
-        var debugText = $"ServiceDescriptors = {RootProvider.CallSiteFactory.Descriptors.Length}";
+        var debugText = $"ServiceDescriptors = {RootProvider.CallSiteFactory.Descriptors.Count}";
         if (!IsRootScope)
         {
-            debugText += $", IsScope = true";
+            debugText += ", IsScope = true";
         }
         if (_disposed)
         {
-            debugText += $", Disposed = true";
+            debugText += ", Disposed = true";
         }
         return debugText;
     }

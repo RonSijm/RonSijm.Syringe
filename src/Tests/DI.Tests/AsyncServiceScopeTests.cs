@@ -94,10 +94,6 @@ public class AsyncServiceScopeTests
 
     public class FakeAsyncServiceScope : FakeSyncServiceScope, IAsyncDisposable
     {
-        public FakeAsyncServiceScope() : base()
-        {
-        }
-
         public bool DisposeAsyncCalled { get; private set; }
 
         public ValueTask DisposeAsync()
