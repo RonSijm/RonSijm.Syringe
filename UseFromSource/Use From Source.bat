@@ -1,0 +1,3 @@
+cd..
+setx USE_SYRINGE_FROM_SOURCE "true"
+setx SYRINGE_PATH "%CD%"

@@ -27,6 +27,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Main\RonSijm.Syringe.Fluxor\RonSijm.Syringe.Fluxor.csproj" />
+    <ProjectReference Include="..\..\Main\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
 
 </Project>

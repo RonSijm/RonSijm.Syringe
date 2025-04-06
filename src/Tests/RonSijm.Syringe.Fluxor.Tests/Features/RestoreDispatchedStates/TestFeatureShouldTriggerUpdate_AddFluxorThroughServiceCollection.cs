@@ -1,5 +1,4 @@
 ﻿using Fluxor;
-using RonSijm.Syringe.DependencyInjection;
 using RonSijm.Syringe.Fluxor.Tests.Redux.TestReducerMethod;
 
 namespace RonSijm.Syringe.Fluxor.Tests.Features.RestoreDispatchedStates;

@@ -29,6 +29,12 @@
 		<!--TODO: <None Include="..\..\..\packaging\logo.png" Pack="true" PackagePath="packaging" />-->
 		<None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
 	</ItemGroup>
+  
+	<ItemGroup>
+	  <Compile Remove="Features\Registration\CustomCollection\Models\**" />
+	  <EmbeddedResource Remove="Features\Registration\CustomCollection\Models\**" />
+	  <None Remove="Features\Registration\CustomCollection\Models\**" />
+	</ItemGroup>
 
 	<ItemGroup>
 	  <None Remove="RonSijm.Syringe.Lib.csproj.DotSettings" />
@@ -36,10 +42,6 @@
 
 	<ItemGroup>
 	  <ProjectReference Include="..\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="Features\Registration\CustomCollection\Models\" />
 	</ItemGroup>
 
 </Project>

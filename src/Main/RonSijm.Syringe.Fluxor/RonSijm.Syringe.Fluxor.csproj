@@ -3,6 +3,7 @@
   <Import Project="..\..\..\BuildSettings\SupportedFrameworks.props" />
   <Import Project="..\..\..\BuildSettings\NuGetVersioning.props" />
   <Import Project="..\..\..\BuildSettings\DependencyInjectionAbstractionsForFramework.props" />
+  <Import Project="..\..\..\BuildSettings\Include.Fluxor.props" />
 
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -25,16 +26,9 @@
     <None Include="..\..\..\README.md" Pack="true" PackagePath="packaging" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(UseSourceProjects)' != 'true'">
-    <PackageReference Include="Fluxor" Version="6.*" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(UseSourceProjects)' == 'true'">
-    <ProjectReference Include="D:\Libraries\Fluxor\Source\Lib\Fluxor\Fluxor.csproj" />
-  </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\RonSijm.Syringe.Fluxor.Lib\RonSijm.Syringe.Fluxor.Lib.csproj" />
+    <ProjectReference Include="..\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
     <ProjectReference Include="..\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
 

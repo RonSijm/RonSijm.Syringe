@@ -72,6 +72,18 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection WireImplicit(this IServiceCollection services, Assembly targetAssembly, ServiceLifetime defaultLifetime = ServiceLifetime.Transient, List<RegistrationSettingBase> settings = null)
     {
+        var explicitRegistrationsOfThisAssembly = services.Where(x => x.ServiceType.Assembly == targetAssembly).ToList();
+
+        if (explicitRegistrationsOfThisAssembly.Any())
+        {
+            settings ??= [];
+
+            foreach (var serviceDescriptor in explicitRegistrationsOfThisAssembly)
+            {
+                settings.Add(new TypeRegistrationSetting(serviceDescriptor.ServiceType, RegistrationType.Interface));
+            }
+        }
+
         var types = targetAssembly.GetTypes().Where(x => !x.IsAbstract).ToList();
 
         var genericTypes = types.Where(x => x.IsGenericType);

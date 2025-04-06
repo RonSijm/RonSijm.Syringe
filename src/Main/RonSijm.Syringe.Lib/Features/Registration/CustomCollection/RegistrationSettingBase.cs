@@ -1,6 +1,16 @@
 ﻿namespace RonSijm.Syringe;
 
-public class RegistrationSettingBase
+public abstract class RegistrationSettingBase
 {
+    public RegistrationSettingBase()
+    {
+        
+    }
+
+    public RegistrationSettingBase(RegistrationType registrationType)
+    {
+        RegistrationType = registrationType;
+    }
+
     public RegistrationType RegistrationType { get; set; }
 }
