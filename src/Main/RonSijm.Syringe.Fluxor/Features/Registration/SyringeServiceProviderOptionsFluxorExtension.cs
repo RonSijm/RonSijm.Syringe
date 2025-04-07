@@ -25,8 +25,6 @@ public static class SyringeServiceProviderOptionsFluxorExtension
 
         providerOptions.Services.AddSingleton<IEffect>(x => new UpdateEffect(x));
 
-        fluxorOptions.WithLifetime(StoreLifetime.Singleton);
-
         if (fluxorOptions.DisableAddingFluxorItself)
         {
             return;
@@ -43,6 +41,6 @@ public static class SyringeServiceProviderOptionsFluxorExtension
             providerOptions.AfterBuildExtensions.Add(new CreateReducersFromReduceIntoExtension());
         }
 
-        providerOptions.Services.AddFluxorInternal(fluxorOptions);
+        providerOptions.Services.AddFluxorLibrary(fluxorOptions);
     }
 }

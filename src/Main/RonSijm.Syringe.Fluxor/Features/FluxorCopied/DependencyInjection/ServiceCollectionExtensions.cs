@@ -9,17 +9,19 @@ namespace RonSijm.Syringe.DependencyInjection;
 /// </summary>
 public static class ServiceCollectionExtensions
 {
-    internal static IServiceCollection AddFluxorInternal(this IServiceCollection services, Action<SyringeFluxorOptions> config = null)
+    public static IServiceCollection AddFluxorLibrary(this IServiceCollection services, Action<SyringeFluxorOptions> config = null)
     {
 		var options = new SyringeFluxorOptions(services);
         config?.Invoke(options);
-        return AddFluxorInternal(services, options);
+        return AddFluxorLibrary(services, options);
     }
 
 
-    public static IServiceCollection AddFluxorInternal(this IServiceCollection services, SyringeFluxorOptions options)
+    public static IServiceCollection AddFluxorLibrary(this IServiceCollection services, SyringeFluxorOptions options)
 	{
-		// Register all middleware types with dependency injection
+        options.WithLifetime(StoreLifetime.Singleton);
+
+        // Register all middleware types with dependency injection
         foreach (var middlewareType in options.MiddlewareTypes)
         {
             services.Add(middlewareType, options);

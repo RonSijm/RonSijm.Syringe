@@ -15,18 +15,26 @@ public class CreateReducersFromReduceIntoExtension : ISyringeAfterBuildExtension
 
     public void Process(List<ServiceDescriptor> loadedDescriptors, bool isInitialBuild)
     {
-        if (!isInitialBuild || loadedDescriptors == null || !loadedDescriptors.Any())
+        if (loadedDescriptors == null || !loadedDescriptors.Any())
         {
             return;
         }
 
         var store = _serviceProvider.GetService<IStore>();
-
         var featureDescriptors = loadedDescriptors.Where(x => x.ServiceType.IsAssignableTo(typeof(IFeature))).ToList();
+
+        var processedItems = new List<object>();
 
         foreach (var serviceDescriptor in featureDescriptors)
         {
             var service = _serviceProvider.GetService(serviceDescriptor.ServiceType) as IFeature;
+
+            if (processedItems.Contains(service))
+            {
+                continue;
+            }
+
+            processedItems.Add(service);
             var stateType = service.GetStateType();
 
             var properties = stateType.GetProperties(BindingFlags.Instance | BindingFlags.Public);
