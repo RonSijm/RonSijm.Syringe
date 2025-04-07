@@ -8,7 +8,6 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RonSijm.Syringe</RootNamespace>
-    <GeneratePackageOnBuild Condition="'$(Configuration)'=='Release'">True</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <PropertyGroup>
