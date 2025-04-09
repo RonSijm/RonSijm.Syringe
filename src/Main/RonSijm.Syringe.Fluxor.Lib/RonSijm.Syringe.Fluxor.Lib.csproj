@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\..\BuildSettings\SupportedFrameworks.props" />
   <Import Project="..\..\..\BuildSettings\NuGetVersioning.props" />
@@ -6,6 +6,7 @@
   <PropertyGroup>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>RonSijm.Syringe</RootNamespace>
+    <ProjectReferenceId>493a9bbc-4642-542d-b1c8-576c3d1424db</ProjectReferenceId>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -28,5 +29,4 @@
     <EmbeddedResource Remove="Properties\**" />
     <None Remove="Properties\**" />
   </ItemGroup>
-
 </Project>

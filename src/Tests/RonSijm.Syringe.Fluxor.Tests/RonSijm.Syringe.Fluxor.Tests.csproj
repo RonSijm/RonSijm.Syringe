@@ -1,13 +1,13 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <LangVersion>latest</LangVersion>
+    <ProjectReferenceId>25cb5ba2-e2d1-5928-be00-86a5b915cbb6</ProjectReferenceId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,5 +29,4 @@
     <ProjectReference Include="..\..\Main\RonSijm.Syringe.Fluxor\RonSijm.Syringe.Fluxor.csproj" />
     <ProjectReference Include="..\..\Main\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
-
 </Project>

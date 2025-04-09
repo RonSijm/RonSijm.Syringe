@@ -1,14 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <LangVersion>latest</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ProjectReferenceId>9b47ad01-bf6e-5d11-8eb2-3cc1e57da2ce</ProjectReferenceId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,5 +35,4 @@
     <ProjectReference Include="..\..\Examples\RonSijm.Syringe.ExamplesB\RonSijm.Syringe.ExamplesB.csproj" />
     <ProjectReference Include="..\..\Main\RonSijm.Syringe\RonSijm.Syringe.csproj" />
   </ItemGroup>
-
 </Project>

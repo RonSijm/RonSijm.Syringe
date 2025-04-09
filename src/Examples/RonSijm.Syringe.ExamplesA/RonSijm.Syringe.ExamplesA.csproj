@@ -1,17 +1,17 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
+    <ProjectReferenceId>a73c65ca-9f18-5e2a-a13f-4383883a7cf4</ProjectReferenceId>
   </PropertyGroup>
 
-	<PropertyGroup>
-		<NoWarn>1701;1702;9113</NoWarn>
+  <PropertyGroup>
+    <NoWarn>1701;1702;9113</NoWarn>
     <LangVersion>latest</LangVersion>
-	</PropertyGroup>
+  </PropertyGroup>
 
-	<ItemGroup>
-	  <ProjectReference Include="..\..\Main\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
-	</ItemGroup>
-
+  <ItemGroup>
+    <ProjectReference Include="..\..\Main\RonSijm.Syringe.Lib\RonSijm.Syringe.Lib.csproj" />
+  </ItemGroup>
 </Project>
