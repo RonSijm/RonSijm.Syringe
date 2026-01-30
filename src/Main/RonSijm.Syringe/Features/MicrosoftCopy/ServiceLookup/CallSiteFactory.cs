@@ -168,6 +168,23 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
         return null;
     }
 
+    /// <summary>
+    /// Gets the slot for a descriptor when querying with AnyKey.
+    /// This looks up the slot based on the descriptor's actual key (not AnyKey)
+    /// so that singleton instances are shared with direct key queries.
+    /// </summary>
+    private int GetSlotForDescriptor(ServiceDescriptor descriptor)
+    {
+        // Use ServiceIdentifier.FromDescriptor to match how DescriptorLookup is keyed
+        var identifier = ServiceIdentifier.FromDescriptor(descriptor);
+        if (DescriptorLookup.TryGetValue(identifier, out var item))
+        {
+            return item.GetSlot(descriptor);
+        }
+        // Fallback to DefaultSlot if not found in lookup
+        return DefaultSlot;
+    }
+
     internal ServiceCallSite GetCallSite(ServiceIdentifier serviceIdentifier, CallSiteChain callSiteChain) =>
         CallSiteCache.TryGetValue(new ServiceCacheKey(serviceIdentifier, DefaultSlot), out var site) ? site :
             CreateCallSite(serviceIdentifier, callSiteChain);
@@ -324,11 +341,25 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
                 List<KeyValuePair<int, ServiceCallSite>> callSitesByIndex = new();
 
                 var slot = 0;
+                // When querying with AnyKey, we need to use the descriptor's actual key for caching
+                // so that singleton instances are shared with direct key queries.
+                // We also need to compute the correct slot for each descriptor based on how many
+                // registrations exist for that specific key.
+                var isAnyKeyQuery = KeyedService.AnyKey.Equals(cacheKey.ServiceKey);
+
                 for (var i = _descriptors.Count - 1; i >= 0; i--)
                 {
-                    if (KeysMatch(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
+                    if (KeysMatchForEnumerable(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
                     {
-                        if (TryCreateExact(_descriptors[i], cacheKey, callSiteChain, slot) is { } callSite)
+                        var effectiveIdentifier = isAnyKeyQuery
+                            ? new ServiceIdentifier(_descriptors[i].ServiceKey, itemType)
+                            : cacheKey;
+                        // For AnyKey queries, compute the slot based on the descriptor's actual key
+                        // to match what would be used for a direct query
+                        var effectiveSlot = isAnyKeyQuery
+                            ? GetSlotForDescriptor(_descriptors[i])
+                            : slot;
+                        if (TryCreateExact(_descriptors[i], effectiveIdentifier, callSiteChain, effectiveSlot) is { } callSite)
                         {
                             AddCallSite(callSite, i);
                         }
@@ -336,9 +367,17 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
                 }
                 for (var i = _descriptors.Count - 1; i >= 0; i--)
                 {
-                    if (KeysMatch(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
+                    if (KeysMatchForEnumerable(_descriptors[i].ServiceKey, cacheKey.ServiceKey))
                     {
-                        if (TryCreateOpenGeneric(_descriptors[i], cacheKey, callSiteChain, slot, throwOnConstraintViolation: false) is { } callSite)
+                        var effectiveIdentifier = isAnyKeyQuery
+                            ? new ServiceIdentifier(_descriptors[i].ServiceKey, itemType)
+                            : cacheKey;
+                        // For AnyKey queries, compute the slot based on the descriptor's actual key
+                        // to match what would be used for a direct query
+                        var effectiveSlot = isAnyKeyQuery
+                            ? GetSlotForDescriptor(_descriptors[i])
+                            : slot;
+                        if (TryCreateOpenGeneric(_descriptors[i], effectiveIdentifier, callSiteChain, effectiveSlot, throwOnConstraintViolation: false) is { } callSite)
                         {
                             AddCallSite(callSite, i);
                         }
@@ -715,6 +754,37 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
             return key1.Equals(key2)
                    || key1.Equals(KeyedService.AnyKey)
                    || key2.Equals(KeyedService.AnyKey);
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the descriptor key matches the query key for enumerable resolution.
+    /// For enumerable resolution:
+    /// - AnyKey registrations are NEVER included in the results
+    /// - When querying with AnyKey, return all services with non-null keys (but not AnyKey registrations)
+    /// - When querying with a specific key, return only services with that exact key
+    /// </summary>
+    private static bool KeysMatchForEnumerable(object descriptorKey, object queryKey)
+    {
+        // AnyKey registrations are never included in enumerable results
+        if (KeyedService.AnyKey.Equals(descriptorKey))
+            return false;
+
+        // If querying with AnyKey, match all services with non-null keys
+        if (KeyedService.AnyKey.Equals(queryKey))
+        {
+            return descriptorKey != null;
+        }
+
+        // For specific key queries, only match exact keys (or both null)
+        if (descriptorKey == null && queryKey == null)
+            return true;
+
+        if (descriptorKey != null && queryKey != null)
+        {
+            return descriptorKey.Equals(queryKey);
         }
 
         return false;

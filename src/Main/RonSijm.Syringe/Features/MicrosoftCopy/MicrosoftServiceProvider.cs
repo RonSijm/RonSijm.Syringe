@@ -124,7 +124,21 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         => GetKeyedService(serviceType, serviceKey, Root);
 
     internal object GetKeyedService(Type serviceType, object serviceKey, ServiceProviderEngineScope serviceProviderEngineScope)
-        => GetService(new ServiceIdentifier(serviceKey, serviceType), serviceProviderEngineScope);
+    {
+        // GetKeyedService with KeyedService.AnyKey is not allowed for non-enumerable types
+        // However, GetKeyedServices<T>(AnyKey) internally calls GetRequiredKeyedService<IEnumerable<T>>(AnyKey)
+        // so we need to allow AnyKey for IEnumerable<T> types
+        if (KeyedService.AnyKey.Equals(serviceKey))
+        {
+            var isEnumerable = serviceType.IsConstructedGenericType &&
+                               serviceType.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+            if (!isEnumerable)
+            {
+                throw new InvalidOperationException(SR.AnyKeyNotSupported);
+            }
+        }
+        return GetService(new ServiceIdentifier(serviceKey, serviceType), serviceProviderEngineScope);
+    }
 
     /// <summary>
     /// Gets the service object of the specified type.
@@ -141,6 +155,11 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         var service = GetKeyedService(serviceType, serviceKey, serviceProviderEngineScope);
         if (service == null)
         {
+            // Include the service key type in the error message for keyed services
+            if (serviceKey != null)
+            {
+                throw new InvalidOperationException(SR.Format(SR.NoKeyedServiceRegistered, serviceType, serviceKey.GetType().FullName));
+            }
             throw new InvalidOperationException(SR.Format(SR.NoServiceRegistered, serviceType));
         }
         return service;

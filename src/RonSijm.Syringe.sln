@@ -15,6 +15,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonSijm.Syringe.Fluxor", "M
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonSijm.Syringe.Fluxor.Lib", "Main\RonSijm.Syringe.Fluxor.Lib\RonSijm.Syringe.Fluxor.Lib.csproj", "{327940BC-24FE-4DD6-E887-4B77A08D9779}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{059E78EA-FFB6-40C9-8EEF-BB9AE80D128B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MicrosoftCopy.DependencyInjection.Tests", "Tests\DI.Tests\MicrosoftCopy.DependencyInjection.Tests.csproj", "{C0BC4345-B68D-B593-481C-52C836DF5F87}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonSijm.Syringe.Fluxor.Tests", "Tests\RonSijm.Syringe.Fluxor.Tests\RonSijm.Syringe.Fluxor.Tests.csproj", "{D01CE804-C611-F3F4-9D82-2CCE64943BB5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonSijm.Syringe.Tests", "Tests\RonSijm.Syringe.Tests\RonSijm.Syringe.Tests.csproj", "{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RonSijm.Syringe.Tests.TestObjects", "Tests\RonSijm.Syringe.Tests.TestObjects\RonSijm.Syringe.Tests.TestObjects.csproj", "{158E431F-E9E5-825C-3711-08A952422E3D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -37,6 +47,22 @@ Global
 		{327940BC-24FE-4DD6-E887-4B77A08D9779}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{327940BC-24FE-4DD6-E887-4B77A08D9779}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{327940BC-24FE-4DD6-E887-4B77A08D9779}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C0BC4345-B68D-B593-481C-52C836DF5F87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C0BC4345-B68D-B593-481C-52C836DF5F87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C0BC4345-B68D-B593-481C-52C836DF5F87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C0BC4345-B68D-B593-481C-52C836DF5F87}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D01CE804-C611-F3F4-9D82-2CCE64943BB5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D01CE804-C611-F3F4-9D82-2CCE64943BB5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D01CE804-C611-F3F4-9D82-2CCE64943BB5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D01CE804-C611-F3F4-9D82-2CCE64943BB5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146}.Release|Any CPU.Build.0 = Release|Any CPU
+		{158E431F-E9E5-825C-3711-08A952422E3D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{158E431F-E9E5-825C-3711-08A952422E3D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{158E431F-E9E5-825C-3711-08A952422E3D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{158E431F-E9E5-825C-3711-08A952422E3D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -46,6 +72,10 @@ Global
 		{1E11DA5E-387E-4006-BC21-FB404100A169} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{01259ABD-DEC0-6D3A-B988-E8380375D510} = {98043BAD-3F86-4F68-BE05-F757C61D173E}
 		{327940BC-24FE-4DD6-E887-4B77A08D9779} = {98043BAD-3F86-4F68-BE05-F757C61D173E}
+		{C0BC4345-B68D-B593-481C-52C836DF5F87} = {059E78EA-FFB6-40C9-8EEF-BB9AE80D128B}
+		{D01CE804-C611-F3F4-9D82-2CCE64943BB5} = {059E78EA-FFB6-40C9-8EEF-BB9AE80D128B}
+		{52C32B1B-3EEE-0B54-DD1F-E31D6D60F146} = {059E78EA-FFB6-40C9-8EEF-BB9AE80D128B}
+		{158E431F-E9E5-825C-3711-08A952422E3D} = {059E78EA-FFB6-40C9-8EEF-BB9AE80D128B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1368BCCC-9499-4426-A9D1-9ACFD4F63A0E}
