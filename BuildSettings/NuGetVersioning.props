@@ -2,7 +2,7 @@
   	<PropertyGroup>
         <Authors>Ron Sijm</Authors>
 		<Company>Ron Sijm</Company>
-        <VersionPrefix>1.0.0-RC1.6</VersionPrefix>
+        <VersionPrefix>1.0.0-RC1.7</VersionPrefix>
 	</PropertyGroup>
     
     <PropertyGroup Condition="'$(Configuration)'=='Release'">

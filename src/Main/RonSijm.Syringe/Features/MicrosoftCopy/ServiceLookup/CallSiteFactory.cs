@@ -648,6 +648,17 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
             if (!isKeyedParameter)
             {
                 callSite ??= GetCallSite(ServiceIdentifier.FromServiceType(parameterType), callSiteChain);
+
+                // If no callsite found, try to find a keyed service where the key matches the parameter name
+                if (callSite == null)
+                {
+                    var parameterName = parameters[index].Name;
+                    if (parameterName != null)
+                    {
+                        var keyedServiceIdentifier = new ServiceIdentifier(parameterName, parameterType);
+                        callSite = GetCallSite(keyedServiceIdentifier, callSiteChain);
+                    }
+                }
             }
 
             if (callSite == null && ParameterDefaultValue.TryGetDefaultValue(parameters[index], out var defaultValue))

@@ -8,6 +8,11 @@ public static class PackageRegistrationExtension
     {
         var package = new T();
 
+        return await Register(services, package);
+    }
+
+    public static async Task<IServiceCollection> Register(this IServiceCollection services, IBootstrapper package)
+    {
         foreach (var descriptor in await package.Bootstrap())
         {
             services.Add(descriptor);

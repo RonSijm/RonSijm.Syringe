@@ -280,13 +280,12 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     {
         Options.AfterBuildExtensions.ForEach(x => x.Process(newServices, isInitialBuild));
 
-        var scopes = Scopes.ToList();
-
-        foreach (var scopeWrapper in Scopes)
-        {
-            var scoped = ConstructScoped();
-            scopeWrapper.ServiceProvider = scoped;
-        }
+        // Note: We intentionally do NOT replace the scoped providers when rebuilding.
+        // The existing scoped providers share the same RootProvider which has been updated
+        // with the new service descriptors. Replacing the scoped providers would create
+        // new instances of scoped services, breaking event subscriptions and other
+        // references to the old instances (e.g., RadzenDialog subscribes to DialogService.OnOpen,
+        // and replacing the scoped provider would give new components a different DialogService instance).
     }
 
     public void Dispose()
