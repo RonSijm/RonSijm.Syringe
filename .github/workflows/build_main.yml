@@ -11,18 +11,31 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: | 
+          dotnet-version: |
             8.x
             9.x
       - name: Restore dependencies
         run: dotnet restore src/RonSijm.Syringe.sln
       - name: Build Projects
-        run: dotnet build src/RonSijm.Syringe.sln --configuration Release
+        run: dotnet build src/RonSijm.Syringe.sln --configuration Release --no-restore
+      - name: Test
+        run: dotnet test src/RonSijm.Syringe.sln --no-restore --collect:"XPlat Code Coverage" --results-directory:coverage -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=lcov
+      - name: Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          directory: ./coverage
+          token: ${{secrets.CODECOV_KEY}}
       - name: Publish nupkg to NuGet
         env:
           NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
-        run: dotnet nuget push "./packages/*.nupkg" --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate
+        run: |
+          for package in ./packages/*.nupkg; do
+            dotnet nuget push "$package" --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate || true
+          done
       - name: Publish symbols to NuGet
         env:
           NUGET_API_KEY: ${{secrets.NUGET_API_KEY}}
-        run: dotnet nuget push "./packages/*.snupkg" --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate
+        run: |
+          for package in ./packages/*.snupkg; do
+            dotnet nuget push "$package" --source https://api.nuget.org/v3/index.json --api-key $NUGET_API_KEY --skip-duplicate || true
+          done
