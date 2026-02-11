@@ -229,13 +229,11 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     private void RegisterServiceDescriptor(ServiceDescriptor serviceDescriptor, List<ServiceDescriptor> loadedServiceDescriptor)
     {
-        var existingService = Services.FirstOrDefault(x => x.ServiceType == serviceDescriptor.ServiceType);
-
-        if (existingService != null)
-        {
-            return;
-        }
-
+        // Note: We intentionally do NOT check for existing services here.
+        // Microsoft's DI allows multiple registrations of the same service type,
+        // which is used by libraries like gRPC, HttpClientFactory, and Options pattern
+        // (e.g., multiple IConfigureOptions<T> registrations for named options).
+        // See: https://github.com/RonSijm/RonSijm.Syringe/issues/1
         Services.Add(serviceDescriptor);
         NewServices.Add(serviceDescriptor);
         loadedServiceDescriptor.Add(serviceDescriptor);
