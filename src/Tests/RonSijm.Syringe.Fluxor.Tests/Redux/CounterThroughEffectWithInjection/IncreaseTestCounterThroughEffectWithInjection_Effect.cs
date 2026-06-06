@@ -5,6 +5,7 @@ namespace RonSijm.Syringe.Fluxor.Tests.Redux.CounterThroughEffectWithInjection;
 
 public class InjectAttribute : Attribute
 {
+    public bool Type { get; set; }
 }
 
 public class IncreaseTestCounterThroughEffectWithInjection_Child : IncreaseTestCounterThroughEffectWithInjection_Effect

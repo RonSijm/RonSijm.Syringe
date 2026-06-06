@@ -25,12 +25,19 @@ public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfte
             var properties = currentService.GetType()
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Where(p => p.CanWrite && p.PropertyType != typeof(string))
-                .Where(propertyInfo => propertyInfo.GetCustomAttributes().Any(attr => attr.GetType().Name == "InjectAttribute"))
+                .Select(propertyInfo => (PropertyInfo: propertyInfo, InjectAttribute: propertyInfo.GetCustomAttributes().FirstOrDefault(attr => attr.GetType().Name == "InjectAttribute")))
+                .Where(x => x.InjectAttribute != null)
                 .ToList();
 
-            foreach (var propertyInfo in properties)
+            foreach (var (propertyInfo, injectAttribute) in properties)
             {
                 var result = GetService(propertyInfo, cacheProviders);
+
+                if (result.Result == null && IsRequired(injectAttribute))
+                {
+                    throw new InvalidOperationException($"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' on '{currentService.GetType().FullName}'.");
+                }
+
                 propertyInfo.SetValue(currentService, result.Result);
 
                 if (result is { WireInner: true, Result: not null })
@@ -39,6 +46,17 @@ public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfte
                 }
             }
         }
+    }
+
+    private static bool IsRequired(Attribute injectAttribute)
+    {
+        var requiredProperty = injectAttribute.GetType().GetProperty("Required", BindingFlags.Public | BindingFlags.Instance);
+        if (requiredProperty != null && requiredProperty.PropertyType == typeof(bool) && requiredProperty.CanRead)
+        {
+            return (bool)requiredProperty.GetValue(injectAttribute);
+        }
+
+        return false;
     }
 
     private (object Result, bool WireInner) GetService(PropertyInfo propertyInfo, List<AdditionProvider> cacheProviders)

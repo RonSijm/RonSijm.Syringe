@@ -2,5 +2,6 @@
 {
     public class InjectAttribute : Attribute
     {
+        public bool Required { get; set; }
     }
 }
