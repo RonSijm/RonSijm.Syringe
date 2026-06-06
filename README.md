@@ -16,6 +16,8 @@ Get it? A Syringe is used to inject things. Yes jokes are better when you have t
 - **Configuration-Based Registration** - Configure service registration via `appsettings.json`
 - **Assembly Bootstrapping** - `IBootstrapper` interface for library initialization
 - **Extensibility Points** - Hook into service resolution and build events
+- **Property Injection** - Populate properties marked with `[Inject]`, with optional `Required` and `Key` support
+- **Method Injection Validation** - Verify `[FromServices]` parameters on Minimal API handlers at build time
 - **Keyed Services** - Full support for .NET 8+ keyed services
 - **Scoped Services** - Proper scope management with `CreateScope()`
 
@@ -432,6 +434,136 @@ var provider = new SyringeServiceProvider(options =>
     options.WithAfterGetService<MyAfterServiceExtension>();
 });
 ```
+
+---
+
+## Property Injection
+
+The `PropertyInjectionAfterServiceExtension` populates public writable properties marked with an `InjectAttribute` after a service is resolved. The attribute is matched by name, so you can define your own:
+
+```csharp
+public class InjectAttribute : Attribute
+{
+    public bool Required { get; set; }
+    public object Key { get; set; }
+}
+```
+
+Then mark the properties you want injected:
+
+```csharp
+public class MyService
+{
+    [Inject]
+    public IOptionalDependency Optional { get; set; }
+
+    [Inject(Required = true)]
+    public IMandatoryDependency Mandatory { get; set; }
+
+    [Inject(Required = true, Key = "primary")]
+    public IKeyedDependency Primary { get; set; }
+}
+```
+
+Enable property injection by adding the extension:
+
+```csharp
+var provider = new SyringeServiceProvider(options =>
+{
+    options.WithAfterGetService<PropertyInjectionAfterServiceExtension>();
+});
+```
+
+- `Required = true` throws an `InvalidOperationException` when the property cannot be resolved.
+- `Key` is typed as `object`, so strings, enums, ints, or any other type accepted by Microsoft's keyed-service APIs all work.
+- Both `Required` and `Key` are discovered reflectively, so they remain optional on your own `InjectAttribute`.
+
+### Validate Property Injection on Build
+
+`PropertyInjectionAfterServiceExtension` also plugs into `ValidateOnBuild`. Any registered service with `[Inject(Required = true)]` properties (including keyed ones) is verified during the build, without instantiating the services:
+
+```csharp
+var provider = new SyringeServiceProvider(options =>
+{
+    options.WithAfterGetService<PropertyInjectionAfterServiceExtension>();
+    options.ValidateOnBuild = true;
+});
+```
+
+If any required property is missing, the build fails with the standard `AggregateException("Some services are not able to be constructed", …)` containing one `InvalidOperationException` per missing dependency.
+
+---
+
+## Method Injection Validation
+
+ASP.NET Core Minimal APIs let you inject services straight into static endpoint handlers via `[FromServices]`:
+
+```csharp
+public static class FootballEndpoints
+{
+    public static async Task<IResult> GetFootballAsync(
+        int footballId,
+        [FromServices] IGetFootballService service,
+        CancellationToken cancellationToken)
+    {
+        // ...
+    }
+}
+```
+
+These handlers are not registered as services, so a missing dependency only surfaces at request time. `MethodInjectionValidationExtension` lets you validate them during `ValidateOnBuild`:
+
+```csharp
+var extension = new MethodInjectionValidationExtension()
+    .AddMethod(FootballEndpoints.GetFootballAsync);
+
+var provider = new SyringeServiceProvider(options =>
+{
+    options.WithAfterGetService(extension);
+    options.ValidateOnBuild = true;
+});
+```
+
+For every registered method, each parameter marked with `[FromServices]` or `[FromKeyedServices(key)]` is checked against the container. Missing parameters are aggregated into a single `InvalidOperationException` that is bundled into the standard `AggregateException` thrown by `ValidateOnBuild`.
+
+Like `InjectAttribute`, both attributes are matched by name, so Microsoft's `FromKeyedServicesAttribute` works out of the box and you can supply your own `FromServicesAttribute` without referencing ASP.NET Core.
+
+### Works with the default Microsoft DI provider
+
+The same validation is also exposed as a `ValidateMethodInjection` extension method that works on any `IServiceProvider` — including the stock `ServiceProvider` returned by `IServiceCollection.BuildServiceProvider()` — without needing `SyringeServiceProvider` at all:
+
+```csharp
+var services = new ServiceCollection();
+services.AddSingleton<IGetFootballService, GetFootballService>();
+
+var provider = services.BuildServiceProvider();
+provider.ValidateMethodInjection(FootballEndpoints.GetFootballAsync);
+```
+
+Internally it queries Microsoft's public `IServiceProviderIsService` / `IServiceProviderIsKeyedService` introspection contracts (no reflection into framework internals), and throws the same `AggregateException("Some services are not able to be constructed", …)` shape that `ValidateOnBuild` produces.
+
+### Validating every registered Minimal API endpoint
+
+You usually don't want to list handlers by hand. Every endpoint registered through `MapGet` / `MapPost` / etc. stores its handler's `MethodInfo` on the endpoint metadata, so you can hand the whole set to `ValidateMethodInjection` in one go:
+
+```csharp
+var app = builder.Build();
+
+app.MapGet("/Footballs/{FootballId:int}", FootballEndpoints.GetFootballAsync);
+// ...other MapXxx calls...
+
+var handlerMethods = app.DataSources
+    .SelectMany(ds => ds.Endpoints)
+    .Select(e => e.Metadata.GetMetadata<MethodInfo>())
+    .Where(m => m != null)
+    .ToArray();
+
+app.Services.ValidateMethodInjection(handlerMethods);
+
+app.Run();
+```
+
+This catches missing `[FromServices]` dependencies on application start instead of at the first request that hits the endpoint.
 
 ---
 
