@@ -19,6 +19,7 @@ namespace RonSijm.Syringe;
 public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
 {
     private readonly CallSiteValidator _callSiteValidator;
+    private readonly List<ISyringeCallSiteValidator> _additionalValidators;
 
     private readonly Func<ServiceIdentifier, ServiceAccessor> _createServiceAccessor;
 
@@ -70,6 +71,19 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
         if (options.ValidateScopes)
         {
             _callSiteValidator = new CallSiteValidator();
+        }
+
+        if (options.AdditionalCallSiteValidatorFactories.Count > 0)
+        {
+            _additionalValidators = new List<ISyringeCallSiteValidator>(options.AdditionalCallSiteValidatorFactories.Count);
+            foreach (var factory in options.AdditionalCallSiteValidatorFactories)
+            {
+                var validator = factory(this);
+                if (validator != null)
+                {
+                    _additionalValidators.Add(validator);
+                }
+            }
         }
 
         if (options.ValidateOnBuild)
@@ -190,6 +204,14 @@ public sealed class MicrosoftServiceProvider : IKeyedServiceProvider, IDisposabl
     private void OnCreate(ServiceCallSite callSite)
     {
         _callSiteValidator?.ValidateCallSite(callSite);
+
+        if (_additionalValidators != null)
+        {
+            foreach (var validator in _additionalValidators)
+            {
+                validator.ValidateCallSite(callSite);
+            }
+        }
     }
 
     private void OnResolve(ServiceCallSite callSite, IServiceScope scope)

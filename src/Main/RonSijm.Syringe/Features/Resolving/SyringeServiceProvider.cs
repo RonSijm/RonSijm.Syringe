@@ -72,6 +72,22 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
     {
         Options = options ?? new SyringeServiceProviderOptions();
         Options.ServiceProviderOptions ??= new ServiceProviderOptions { RegisterServiceScopeFactory = false };
+
+        if (Options.ValidateOnBuild)
+        {
+            Options.ServiceProviderOptions.ValidateOnBuild = true;
+        }
+
+        if (Options.ValidateScopes)
+        {
+            Options.ServiceProviderOptions.ValidateScopes = true;
+        }
+
+        foreach (var validatorProvider in Options.AfterGetServiceExtensions.OfType<IProvideCallSiteValidator>())
+        {
+            Options.ServiceProviderOptions.AdditionalCallSiteValidatorFactories.Add(validatorProvider.CreateValidator);
+        }
+
         Services = collection;
         NewServices = [];
 

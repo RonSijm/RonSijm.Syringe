@@ -25,4 +25,11 @@ public class ServiceProviderOptions
     public bool ValidateOnBuild { get; set; }
 
     public bool RegisterServiceScopeFactory { get; set; } = true;
+
+    /// <summary>
+    /// Additional validators to run during <see cref="ValidateOnBuild"/>. Each factory receives the
+    /// <see cref="MicrosoftServiceProvider"/> currently being constructed and returns a validator
+    /// that is invoked for every visited call site, alongside the built-in scope validator.
+    /// </summary>
+    public List<Func<MicrosoftServiceProvider, ISyringeCallSiteValidator>> AdditionalCallSiteValidatorFactories { get; } = new();
 }

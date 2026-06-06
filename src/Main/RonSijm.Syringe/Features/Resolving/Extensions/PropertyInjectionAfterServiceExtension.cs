@@ -2,11 +2,16 @@
 
 namespace RonSijm.Syringe;
 
-public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfterServiceExtensionBase
+public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfterServiceExtensionBase, IProvideCallSiteValidator
 {
     public override void Decorate(Type serviceType, object service)
     {
         DecorateInternal(service, new List<AdditionProvider>());
+    }
+
+    public ISyringeCallSiteValidator CreateValidator(MicrosoftServiceProvider serviceProvider)
+    {
+        return new PropertyInjectionCallSiteValidator(serviceProvider);
     }
 
     private void DecorateInternal(object service, List<AdditionProvider> cacheProviders)
