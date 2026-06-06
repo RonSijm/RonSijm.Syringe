@@ -36,11 +36,14 @@ public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfte
 
             foreach (var (propertyInfo, injectAttribute) in properties)
             {
-                var result = GetService(propertyInfo, cacheProviders);
+                var key = GetKey(injectAttribute);
+                var result = key != null
+                    ? GetKeyedService(propertyInfo, key)
+                    : GetService(propertyInfo, cacheProviders);
 
                 if (result.Result == null && IsRequired(injectAttribute))
                 {
-                    throw new InvalidOperationException($"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' on '{currentService.GetType().FullName}'.");
+                    throw new InvalidOperationException(BuildMissingMessage(propertyInfo, currentService.GetType(), key));
                 }
 
                 propertyInfo.SetValue(currentService, result.Result);
@@ -53,6 +56,30 @@ public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfte
         }
     }
 
+    private static string BuildMissingMessage(PropertyInfo propertyInfo, Type declaringType, object key)
+    {
+        return key != null
+            ? $"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' with key '{key}' on '{declaringType.FullName}'."
+            : $"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' on '{declaringType.FullName}'.";
+    }
+
+    private (object Result, bool WireInner) GetKeyedService(PropertyInfo propertyInfo, object key)
+    {
+        var serviceType = propertyInfo.PropertyType;
+        var afterServiceExtensions = ServiceProvider.Options.AfterGetServiceExtensions
+            .Where(x => x.GetType() != typeof(PropertyInjectionAfterServiceExtension))
+            .ToList();
+
+        var service = ServiceProvider.GetKeyedService(serviceType, key);
+        if (service == null)
+        {
+            return (null, false);
+        }
+
+        afterServiceExtensions.ForEach(x => x.Decorate(serviceType, service));
+        return (service, true);
+    }
+
     private static bool IsRequired(Attribute injectAttribute)
     {
         var requiredProperty = injectAttribute.GetType().GetProperty("Required", BindingFlags.Public | BindingFlags.Instance);
@@ -62,6 +89,23 @@ public class PropertyInjectionAfterServiceExtension : SyringeServiceProviderAfte
         }
 
         return false;
+    }
+
+    private static object GetKey(Attribute injectAttribute)
+    {
+        var keyProperty = injectAttribute.GetType().GetProperty("Key", BindingFlags.Public | BindingFlags.Instance);
+        if (keyProperty == null || !keyProperty.CanRead)
+        {
+            return null;
+        }
+
+        var value = keyProperty.GetValue(injectAttribute);
+        if (value is string stringValue)
+        {
+            return string.IsNullOrEmpty(stringValue) ? null : stringValue;
+        }
+
+        return value;
     }
 
     private (object Result, bool WireInner) GetService(PropertyInfo propertyInfo, List<AdditionProvider> cacheProviders)

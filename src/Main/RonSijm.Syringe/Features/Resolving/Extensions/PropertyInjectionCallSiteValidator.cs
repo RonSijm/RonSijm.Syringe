@@ -30,9 +30,16 @@ internal sealed class PropertyInjectionCallSiteValidator(MicrosoftServiceProvide
                 continue;
             }
 
-            if (!serviceProvider.CallSiteFactory.IsService(propertyInfo.PropertyType))
+            var key = GetKey(injectAttribute);
+            var isRegistered = key != null
+                ? serviceProvider.CallSiteFactory.IsKeyedService(propertyInfo.PropertyType, key)
+                : serviceProvider.CallSiteFactory.IsService(propertyInfo.PropertyType);
+
+            if (!isRegistered)
             {
-                throw new InvalidOperationException($"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' on '{implementationType.FullName}'.");
+                throw new InvalidOperationException(key != null
+                    ? $"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' with key '{key}' on '{implementationType.FullName}'."
+                    : $"Unable to resolve required property '{propertyInfo.Name}' of type '{propertyInfo.PropertyType}' on '{implementationType.FullName}'.");
             }
         }
     }
@@ -46,5 +53,22 @@ internal sealed class PropertyInjectionCallSiteValidator(MicrosoftServiceProvide
         }
 
         return false;
+    }
+
+    private static object GetKey(Attribute injectAttribute)
+    {
+        var keyProperty = injectAttribute.GetType().GetProperty("Key", BindingFlags.Public | BindingFlags.Instance);
+        if (keyProperty == null || !keyProperty.CanRead)
+        {
+            return null;
+        }
+
+        var value = keyProperty.GetValue(injectAttribute);
+        if (value is string stringValue)
+        {
+            return string.IsNullOrEmpty(stringValue) ? null : stringValue;
+        }
+
+        return value;
     }
 }
