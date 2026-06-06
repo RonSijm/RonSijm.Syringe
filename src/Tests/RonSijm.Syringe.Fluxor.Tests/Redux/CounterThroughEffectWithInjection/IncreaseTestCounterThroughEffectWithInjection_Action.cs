@@ -1,6 +1,5 @@
-﻿namespace RonSijm.Syringe.Fluxor.Tests.Redux.CounterThroughEffectWithInjection
+﻿namespace RonSijm.Syringe.Fluxor.Tests.Redux.CounterThroughEffectWithInjection;
+
+public class IncreaseTestCounterThroughEffectWithInjection_Action
 {
-    public class IncreaseTestCounterThroughEffectWithInjection_Action
-    {
-    }
 }
