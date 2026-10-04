@@ -1,11 +1,16 @@
-﻿using System.Reflection;
+﻿using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
 using RonSijm.Syringe.DependencyInjection;
 
 namespace RonSijm.Syringe;
 
-public class SyringeFluxorOptions(IServiceCollection services) : FluxorOptions(services)
+public class SyringeFluxorOptions : FluxorOptions
 {
+    public SyringeFluxorOptions(IServiceCollection services) : base(services)
+    {
+        SetDefaultLifetime(StoreLifetime.Singleton);
+    }
+
     public bool DisableAddingFluxorItself { get; set; }
     public bool DisableAddingStateDispatchRestore { get; set; }
     public bool DisableReduceAttributes { get; set; }
@@ -18,20 +23,20 @@ public class SyringeFluxorOptions(IServiceCollection services) : FluxorOptions(s
         return this;
     }
 
-    public SyringeFluxorOptions AddNativeExtension(Action<NativeFluxorOptions> config)
+    public delegate void NativeExtensionConfiguration(SyringeFluxorOptions options);
+
+    public SyringeFluxorOptions AddNativeExtension(NativeExtensionConfiguration config)
     {
-        var newServices = new ServiceCollection();
-        var options = new NativeFluxorOptions(services);
-        config.Invoke(options);
+        config(this);
 
-        var optionsType = typeof(NativeFluxorOptions);
-
-        var assembliesToScan = optionsType.GetProperty("AssembliesToScan", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(options);
-        var typesToScan = optionsType.GetProperty("TypesToScan", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(options) as Type[];
-        var middlewareTypes = optionsType.GetField("MiddlewareTypes", BindingFlags.NonPublic | BindingFlags.Instance)?.GetValue(options) as Type[];
-
-        TypesToScan.AddRange(typesToScan);
-        MiddlewareTypes.AddRange(middlewareTypes);
+        // Native extensions register middleware through the public service collection.
+        foreach (var type in Services.Select(descriptor => descriptor.ServiceType).Where(type => typeof(IMiddleware).IsAssignableFrom(type)).Distinct())
+        {
+            if (!MiddlewareTypes.Contains(type))
+            {
+                MiddlewareTypes.Add(type);
+            }
+        }
 
         return this;
     }

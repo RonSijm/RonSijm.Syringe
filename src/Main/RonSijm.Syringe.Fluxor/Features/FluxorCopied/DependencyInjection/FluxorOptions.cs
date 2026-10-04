@@ -8,28 +8,29 @@ namespace RonSijm.Syringe.DependencyInjection;
 /// <summary>
 /// An options class for configuring Fluxor
 /// </summary>
-public class FluxorOptions
+public class FluxorOptions : NativeFluxorOptions
 {
     internal List<AssemblyScanSettings> AssembliesToScan { get; private set; } = new();
     internal List<Type> TypesToScan { get; private set; } = new();
     internal List<Type> MiddlewareTypes = new();
 	internal StoreLifetime StoreLifetime { get; set; } = StoreLifetime.Scoped;
-
-	/// <summary>
-	/// Service collection for registering services
-	/// </summary>
-	public readonly IServiceCollection Services;
+    internal bool HasExplicitLifetime { get; private set; }
+    internal ServiceLifetime ServiceLifetime => StoreLifetime switch
+    {
+        StoreLifetime.Singleton => ServiceLifetime.Singleton,
+        StoreLifetime.Scoped => ServiceLifetime.Scoped,
+        _ => throw new InvalidOperationException($"Unsupported Fluxor lifetime '{StoreLifetime}'.")
+    };
 
 	/// <summary>
 	/// Creates a new instance
 	/// </summary>
 	/// <param name="services"></param>
-	public FluxorOptions(IServiceCollection services)
+	public FluxorOptions(IServiceCollection services) : base(services)
 	{
-		Services = services;
 	}
 
-	public FluxorOptions ScanTypes(Type typeToScan, params Type[] additionalTypesToScan)
+	public new FluxorOptions ScanTypes(Type typeToScan, params Type[] additionalTypesToScan)
 	{
         if (typeToScan is null)
         {
@@ -77,27 +78,41 @@ public class FluxorOptions
 	/// This value should only be set once during the configuration of Fluxor
 	/// </para>
 	/// </remarks>
-	public FluxorOptions WithLifetime(StoreLifetime lifecycle)
+	public new FluxorOptions WithLifetime(StoreLifetime lifecycle)
 	{
+        if (lifecycle != StoreLifetime.Singleton && lifecycle != StoreLifetime.Scoped)
+        {
+            throw new ArgumentOutOfRangeException(nameof(lifecycle));
+        }
+        base.WithLifetime(lifecycle);
 		StoreLifetime = lifecycle;
+        HasExplicitLifetime = true;
 		return this;
 	}
+
+    protected void SetDefaultLifetime(StoreLifetime lifetime)
+    {
+        base.WithLifetime(lifetime);
+        StoreLifetime = lifetime;
+    }
 
 	/// <summary>
 	/// Enables automatic discovery of features/effects/reducers
 	/// </summary>
 	/// <param name="additionalAssembliesToScan">A collection of assemblies to scan</param>
 	/// <returns>Options</returns>
-	public FluxorOptions ScanAssemblies(
-		Assembly assemblyToScan,
-		params Assembly[] additionalAssembliesToScan)
+	public new FluxorOptions ScanAssemblies(Assembly assemblyToScan, params Assembly[] additionalAssembliesToScan)
 	{
 		if (assemblyToScan is null)
+        {
 			throw new ArgumentNullException(nameof(assemblyToScan));
+        }
 
 		var allAssemblies = new List<Assembly> { assemblyToScan };
 		if (additionalAssembliesToScan is not null)
+        {
 			allAssemblies.AddRange(additionalAssembliesToScan);
+        }
 
 		var newAssembliesToScan = allAssemblies.Select(x => new AssemblyScanSettings(x)).ToList();
 		newAssembliesToScan.AddRange(AssembliesToScan);
@@ -113,7 +128,7 @@ public class FluxorOptions
 	/// </summary>
 	/// <typeparam name="TMiddleware">The Middleware type</typeparam>
 	/// <returns>Options</returns>
-	public FluxorOptions AddMiddleware<TMiddleware>() where TMiddleware : IMiddleware
+	public new FluxorOptions AddMiddleware<TMiddleware>() where TMiddleware : IMiddleware
 	{
         if (MiddlewareTypes.Contains(typeof(TMiddleware)))
         {

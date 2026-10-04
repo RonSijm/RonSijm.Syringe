@@ -6,6 +6,13 @@ namespace RonSijm.Syringe;
 
 public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsyncDisposable
 {
+    private readonly object _registrationLock = new();
+    private readonly ReaderWriterLockSlim _registrationGate = new(LockRecursionPolicy.SupportsRecursion);
+    private SyringeServiceProvider _registrationOwner;
+    private Exception _registrationFailure;
+    private SyringeServiceProvider RegistrationOwner => _registrationOwner ?? this;
+    public bool IsRootScope => ScopedProvider == null;
+    public IReadOnlyList<ServiceDescriptor> ServiceDescriptors => RootProvider?.CallSiteFactory.Descriptors.ToArray() ?? [];
     private IServiceProvider ScopedProvider { get; set; }
     private MicrosoftServiceProvider RootProvider { get; set; }
     public SyringeServiceProviderOptions Options { get; private set; }
@@ -24,11 +31,36 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public ScopeWrapper CreateScope()
     {
-        var scoped = ConstructScoped();
-        var scopeWrapper = new ScopeWrapper(scoped);
-        Scopes.Add(scopeWrapper);
+        RegistrationOwner._registrationGate.EnterReadLock();
+        try
+        {
+            return CreateScopeInternal();
+        }
+        finally
+        {
+            RegistrationOwner._registrationGate.ExitReadLock();
+        }
+    }
 
-        return scopeWrapper;
+    private ScopeWrapper CreateScopeInternal()
+    {
+        lock (RegistrationOwner._registrationLock)
+        {
+            RegistrationOwner.EnsureRegistrationHealthy();
+            var scoped = ConstructScoped();
+            var scopeWrapper = new ScopeWrapper(scoped);
+            RegistrationOwner.Scopes.Add(scopeWrapper);
+            try
+            {
+                scoped.DoAfterBuild(ServiceDescriptors.ToList(), true);
+                return scopeWrapper;
+            }
+            catch
+            {
+                RegistrationOwner.DisposeScope(scopeWrapper);
+                throw;
+            }
+        }
     }
 
     private SyringeServiceProvider ConstructScoped()
@@ -42,7 +74,8 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             NewServices = NewServices,
             Services = Services,
             RootProvider = RootProvider,
-            ScopedProvider = scopedProvider
+            ScopedProvider = scopedProvider,
+            _registrationOwner = RegistrationOwner
         };
         return scoped;
     }
@@ -136,9 +169,28 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public virtual object GetService(Type serviceType)
     {
+        RegistrationOwner._registrationGate.EnterReadLock();
+        try
+        {
+            return GetServiceInternal(serviceType);
+        }
+        finally
+        {
+            RegistrationOwner._registrationGate.ExitReadLock();
+        }
+    }
+
+    private object GetServiceInternal(Type serviceType)
+    {
+        ObjectDisposedException.ThrowIf(RootProvider?.IsDisposed() == true || ScopedProvider is ServiceProviderEngineScope { Disposed: true }, this);
+        RegistrationOwner.EnsureRegistrationHealthy();
+        if (serviceType == typeof(IServiceProvider) || serviceType == typeof(SyringeServiceProvider))
+        {
+            return this;
+        }
         if (TryGetServiceFromOverride(serviceType, out var value))
         {
-            Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(serviceType, value));
+            Decorate(serviceType, value);
             return value;
         }
 
@@ -149,11 +201,35 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
             return null;
         }
 
-        Options.AfterGetServiceExtensions.ForEach(x => x.Decorate(serviceType, service));
+        Decorate(serviceType, service);
 
         TryAddDescriptorToCache(serviceType, service);
 
         return service;
+    }
+
+    private void Decorate(Type serviceType, object service)
+    {
+        foreach (var extension in Options.AfterGetServiceExtensions)
+        {
+            var previous = RegistrationOwner;
+            if (extension is SyringeServiceProviderAfterServiceExtensionBase contextual)
+            {
+                previous = contextual.SwapReference(this);
+            }
+            else
+            {
+                extension.SetReference(this);
+            }
+            try
+            {
+                extension.Decorate(serviceType, service);
+            }
+            finally
+            {
+                extension.SetReference(previous);
+            }
+        }
     }
 
     public void TryAddDescriptorToCache(Type serviceType, object service)
@@ -162,7 +238,13 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
         if (descriptor.Value?.Cache is { Location: CallSiteResultCacheLocation.Root })
         {
-            Options.AdditionalProviders.Add(new SingletonProvider(serviceType, service));
+            lock (Options.AdditionalProviders)
+            {
+                if (!Options.AdditionalProviders.Any(provider => provider is SingletonProvider && provider.IsMatch(serviceType)))
+                {
+                    Options.AdditionalProviders.Add(new SingletonProvider(serviceType, service));
+                }
+            }
         }
     }
 
@@ -201,7 +283,12 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public bool TryGetServiceFromOverride(List<AdditionProvider> providers, Type serviceType, out object value)
     {
-        foreach (var typeFunctionOverride in providers)
+        AdditionProvider[] snapshot;
+        lock (providers)
+        {
+            snapshot = providers.ToArray();
+        }
+        foreach (var typeFunctionOverride in snapshot)
         {
             if (!typeFunctionOverride.IsMatch(serviceType))
             {
@@ -219,28 +306,41 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         return false;
     }
 
-    public async Task<List<ServiceDescriptor>> LoadServiceDescriptors(IServiceCollection serviceCollection)
+    public Task<List<ServiceDescriptor>> LoadServiceDescriptors(IServiceCollection serviceCollection)
     {
-        var loadedServiceDescriptor = new List<ServiceDescriptor>();
-
-        foreach (var serviceDescriptor in serviceCollection)
-        {
-            RegisterServiceDescriptor(serviceDescriptor, loadedServiceDescriptor);
-        }
-
-        return loadedServiceDescriptor;
+        return Task.FromResult(StageServiceDescriptors(serviceCollection.ToArray()));
     }
 
     public async Task<List<ServiceDescriptor>> LoadServiceDescriptors(IAsyncEnumerable<ServiceDescriptor> serviceDescriptors)
     {
-        var loadedServiceDescriptor = new List<ServiceDescriptor>();
-
+        var collected = new List<ServiceDescriptor>();
         await foreach (var serviceDescriptor in serviceDescriptors)
         {
-            RegisterServiceDescriptor(serviceDescriptor, loadedServiceDescriptor);
+            collected.Add(serviceDescriptor);
         }
+        return StageServiceDescriptors(collected);
+    }
 
-        return loadedServiceDescriptor;
+    private List<ServiceDescriptor> StageServiceDescriptors(IEnumerable<ServiceDescriptor> descriptors)
+    {
+        var loaded = new List<ServiceDescriptor>();
+        RegistrationOwner._registrationGate.EnterWriteLock();
+        try
+        {
+            RegistrationOwner.EnsureRegistrationHealthy();
+            lock (RegistrationOwner._registrationLock)
+            {
+                foreach (var descriptor in descriptors)
+                {
+                    RegisterServiceDescriptor(descriptor, loaded);
+                }
+            }
+            return loaded;
+        }
+        finally
+        {
+            RegistrationOwner._registrationGate.ExitWriteLock();
+        }
     }
 
     private void RegisterServiceDescriptor(ServiceDescriptor serviceDescriptor, List<ServiceDescriptor> loadedServiceDescriptor)
@@ -250,25 +350,51 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         // which is used by libraries like gRPC, HttpClientFactory, and Options pattern
         // (e.g., multiple IConfigureOptions<T> registrations for named options).
         // See: https://github.com/RonSijm/RonSijm.Syringe/issues/1
-        Services.Add(serviceDescriptor);
-        NewServices.Add(serviceDescriptor);
-        loadedServiceDescriptor.Add(serviceDescriptor);
+        lock (RegistrationOwner._registrationLock)
+        {
+            Services.Add(serviceDescriptor);
+            NewServices.Add(serviceDescriptor);
+            loadedServiceDescriptor.Add(serviceDescriptor);
+        }
     }
 
     private void BuildInitial()
     {
+        var newServices = NewServices.ToList();
+        PrepareDescriptors(newServices, true);
         RootProvider = Options.ServiceProviderBuilder == null ?
             Services.BuildServiceProvider(Options.ServiceProviderOptions) :
             Options.ServiceProviderBuilder(Services);
 
-        var newServices = NewServices.ToList();
-        NewServices.Clear();
-
         DoAfterBuild(newServices, true);
+        NewServices.Clear();
     }
 
     public void Build()
     {
+        if (RegistrationOwner != this)
+        {
+            RegistrationOwner.Build();
+            return;
+        }
+
+        _registrationGate.EnterWriteLock();
+        try
+        {
+            lock (_registrationLock)
+            {
+                BuildInternal();
+            }
+        }
+        finally
+        {
+            _registrationGate.ExitWriteLock();
+        }
+    }
+
+    private void BuildInternal()
+    {
+        EnsureRegistrationHealthy();
         if (RootProvider == null)
         {
             BuildInitial();
@@ -276,24 +402,146 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
         }
 
         var newServices = NewServices.ToList();
-        NewServices.Clear();
-
-        // Add the new descriptors to the cache
-        RootProvider.CallSiteFactory.AddDescriptors(newServices);
-
-        // Remove cached lookups for the new services, because if they were resolved before they were added, they're cached as null.
-        foreach (var identifier in newServices.Select(ServiceIdentifier.FromDescriptor))
+        var pendingServices = newServices.ToArray();
+        var scopes = Scopes.Select(scope => scope.ServiceProvider.ScopedProvider).OfType<ServiceProviderEngineScope>();
+        var checkpoint = new ServiceRegistrationCheckpoint(RootProvider, scopes, Options.AdditionalProviders);
+        var committing = false;
+        try
         {
-            RootProvider.ServiceAccessors.TryRemove(identifier, out _);
+            PrepareDescriptors(newServices, false);
+            RootProvider.CallSiteFactory.AddDescriptors(newServices);
+            InvalidateLookups(newServices);
+            var commits = PrepareAfterBuild(newServices, false);
+            foreach (var scope in Scopes.ToArray())
+            {
+                commits.AddRange(scope.ServiceProvider.PrepareAfterBuild(newServices, false));
+            }
+            committing = true;
+            foreach (var commit in commits)
+            {
+                commit();
+            }
+            NewServices.Clear();
         }
+        catch (Exception error)
+        {
+            if (committing)
+            {
+                // External commit callbacks cannot be undone through the DI/store APIs.
+                _registrationFailure = error;
+            }
+            try
+            {
+                checkpoint.Restore();
+            }
+            catch (Exception cleanupError)
+            {
+                _registrationFailure = cleanupError;
+                throw new AggregateException("Service registration failed and rollback cleanup also failed.", error, cleanupError);
+            }
+            finally
+            {
+                Services.Clear();
+                foreach (var descriptor in RootProvider.CallSiteFactory.Descriptors)
+                {
+                    Services.Add(descriptor);
+                }
+                foreach (var descriptor in pendingServices)
+                {
+                    NewServices.Remove(descriptor);
+                }
+            }
+            throw;
+        }
+    }
 
-        DoAfterBuild(newServices, false);
+    private void InvalidateLookups(List<ServiceDescriptor> newServices)
+    {
+        var identifiers = newServices.Select(ServiceIdentifier.FromDescriptor).ToHashSet();
+        foreach (var pair in RootProvider.ServiceAccessors.ToArray())
+        {
+            var type = pair.Key.ServiceType;
+            var isEnumerable = type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>);
+            if (isEnumerable || (identifiers.Contains(pair.Key) && pair.Value.CallSite == null))
+            {
+                RootProvider.ServiceAccessors.TryRemove(pair.Key, out _);
+                if (isEnumerable)
+                {
+                    Options.AdditionalProviders.RemoveAll(provider => provider is SingletonProvider && provider.IsMatch(type));
+                }
+            }
+        }
+        foreach (var key in RootProvider.CallSiteFactory.CallSiteCache.Keys.ToArray())
+        {
+            var type = key.ServiceIdentifier.ServiceType;
+            if (type.IsConstructedGenericType && type.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                RootProvider.CallSiteFactory.CallSiteCache.TryRemove(key, out _);
+            }
+        }
+    }
+
+    private void EnsureRegistrationHealthy()
+    {
+        if (_registrationFailure != null)
+        {
+            throw new InvalidOperationException("A registration commit failed. This provider cannot be reused; dispose it and create a new provider.", _registrationFailure);
+        }
+    }
+
+    private void PrepareDescriptors(List<ServiceDescriptor> services, bool initial)
+    {
+        var pending = services.ToArray();
+        foreach (var extension in Options.AfterBuildExtensions.OfType<ISyringeBeforeBuildExtension>())
+        {
+            extension.SetReference(this);
+            extension.PrepareDescriptors(services, initial);
+        }
+        foreach (var descriptor in pending)
+        {
+            var index = Services.ToList().FindLastIndex(candidate => ReferenceEquals(candidate, descriptor));
+            if (index >= 0)
+            {
+                Services.RemoveAt(index);
+            }
+        }
+        foreach (var descriptor in services)
+        {
+            Services.Add(descriptor);
+        }
+    }
+
+    private List<Action> PrepareAfterBuild(List<ServiceDescriptor> services, bool initial)
+    {
+        var commits = new List<Action>();
+        foreach (var extension in Options.AfterBuildExtensions)
+        {
+            extension.SetReference(this);
+            try
+            {
+                if (extension is ISyringePreparedAfterBuildExtension prepared)
+                {
+                    commits.Add(prepared.Prepare(services, initial));
+                }
+                else
+                {
+                    extension.Process(services, initial);
+                }
+            }
+            finally
+            {
+                extension.SetReference(RegistrationOwner);
+            }
+        }
+        return commits;
     }
 
     private void DoAfterBuild(List<ServiceDescriptor> newServices, bool isInitialBuild)
     {
-        Options.AfterBuildExtensions.ForEach(x => x.Process(newServices, isInitialBuild));
-
+        foreach (var commit in PrepareAfterBuild(newServices, isInitialBuild))
+        {
+            commit();
+        }
         // Note: We intentionally do NOT replace the scoped providers when rebuilding.
         // The existing scoped providers share the same RootProvider which has been updated
         // with the new service descriptors. Replacing the scoped providers would create
@@ -304,6 +552,12 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public void Dispose()
     {
+        if (ScopedProvider is IDisposable scoped)
+        {
+            RegistrationOwner.Scopes.RemoveAll(scope => ReferenceEquals(scope.ServiceProvider, this));
+            scoped.Dispose();
+            return;
+        }
         if (RootProvider is IDisposable disposable)
         {
             disposable.Dispose();
@@ -314,6 +568,11 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public ValueTask DisposeAsync()
     {
+        if (ScopedProvider is IAsyncDisposable scoped)
+        {
+            RegistrationOwner.Scopes.RemoveAll(scope => ReferenceEquals(scope.ServiceProvider, this));
+            return scoped.DisposeAsync();
+        }
         if (RootProvider is IAsyncDisposable disposable)
         {
             return disposable.DisposeAsync();
@@ -324,17 +583,43 @@ public class SyringeServiceProvider : IKeyedServiceProvider, IDisposable, IAsync
 
     public virtual object GetKeyedService(Type serviceType, object serviceKey)
     {
-        return RootProvider.GetKeyedService(serviceType, serviceKey);
+        RegistrationOwner._registrationGate.EnterReadLock();
+        try
+        {
+            RegistrationOwner.EnsureRegistrationHealthy();
+            if (ScopedProvider is IKeyedServiceProvider scoped)
+            {
+                return scoped.GetKeyedService(serviceType, serviceKey);
+            }
+            return RootProvider.GetKeyedService(serviceType, serviceKey);
+        }
+        finally
+        {
+            RegistrationOwner._registrationGate.ExitReadLock();
+        }
     }
 
     public virtual object GetRequiredKeyedService(Type serviceType, object serviceKey)
     {
-        return RootProvider.GetRequiredKeyedService(serviceType, serviceKey);
+        RegistrationOwner._registrationGate.EnterReadLock();
+        try
+        {
+            RegistrationOwner.EnsureRegistrationHealthy();
+            if (ScopedProvider is IKeyedServiceProvider scoped)
+            {
+                return scoped.GetRequiredKeyedService(serviceType, serviceKey);
+            }
+            return RootProvider.GetRequiredKeyedService(serviceType, serviceKey);
+        }
+        finally
+        {
+            RegistrationOwner._registrationGate.ExitReadLock();
+        }
     }
 
     public void DisposeScope(ScopeWrapper scope)
     {
-        Scopes.Remove(scope);
+        RegistrationOwner.Scopes.Remove(scope);
         var disposable = scope.ServiceProvider.ScopedProvider as IDisposable;
         disposable?.Dispose();
     }

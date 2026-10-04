@@ -6,6 +6,8 @@ Get it? A Syringe is used to inject things. Yes jokes are better when you have t
 
 [![codecov](https://codecov.io/github/RonSijm/RonSijm.Syringe/graph/badge.svg?token=QFGV300KRH)](https://codecov.io/github/RonSijm/RonSijm.Syringe)
 
+See the [architecture diagrams](docs/architecture.md) for the package boundaries and runtime registration flow.
+
 ## Features Overview
 
 - **Implicit Wiring** - Automatically register all classes in an assembly with a single line of code

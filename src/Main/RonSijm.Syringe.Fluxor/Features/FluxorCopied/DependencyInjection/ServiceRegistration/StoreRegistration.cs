@@ -1,5 +1,6 @@
 ﻿using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RonSijm.Syringe.DependencyInjection.WrapperFactories;
 using RonSijm.Syringe.Extensions;
 
@@ -17,6 +18,9 @@ internal static class StoreRegistration
 		EffectClassInfo[] effectClassInfos,
 		EffectMethodInfo[] effectMethodInfos)
 	{
+        var module = new FluxorModuleRegistration(options, featureClassInfos, featureStateInfos, reducerClassInfos, reducerMethodInfos, effectClassInfos, effectMethodInfos);
+        services.AddSingleton(module);
+        services.TryAddSingleton<FluxorRegistrationTracker>();
 		FeatureRegistration.Register(
 			services,
 			featureClassInfos,
@@ -70,6 +74,7 @@ internal static class StoreRegistration
 				store.AddMiddleware(middleware);
 			}
 
+            serviceProvider.GetRequiredService<FluxorRegistrationTracker>().RecordInitialStore(store, module);
 			return store;
 		},
 		options);

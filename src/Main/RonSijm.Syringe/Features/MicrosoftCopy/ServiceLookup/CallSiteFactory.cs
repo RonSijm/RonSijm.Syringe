@@ -30,8 +30,9 @@ public sealed class CallSiteFactory : IServiceProviderIsKeyedService
 
     public void AddDescriptors(ICollection<ServiceDescriptor> descriptors)
     {
-        _descriptors.AddRange(descriptors);
-        Populate(_descriptors);
+        var additions = descriptors.ToList();
+        Populate(additions);
+        _descriptors.AddRange(additions);
     }
 
     internal List<ServiceDescriptor> Descriptors => _descriptors;

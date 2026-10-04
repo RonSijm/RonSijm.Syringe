@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using Fluxor;
+using Microsoft.Extensions.DependencyInjection;
 using RonSijm.Syringe.DependencyInjection.ServiceRegistration;
 
 namespace RonSijm.Syringe;
@@ -7,6 +8,11 @@ namespace RonSijm.Syringe;
 internal static class ReduceFromAttributeHandler
 {
     internal static void HandleReduceFromAttribute(this PropertyInfo propertyInfo, Type stateType, SyringeServiceProvider serviceProvider)
+    {
+        propertyInfo.PrepareReduceFromAttribute(stateType, serviceProvider)();
+    }
+
+    internal static Action PrepareReduceFromAttribute(this PropertyInfo propertyInfo, Type stateType, SyringeServiceProvider serviceProvider)
     {
         var openReducerType = typeof(ReduceFromReducer<,>);
         var reduceFromReducer = openReducerType.MakeGenericType(stateType, propertyInfo.PropertyType);
@@ -24,9 +30,9 @@ internal static class ReduceFromAttributeHandler
         var openFeatureType = typeof(IFeature<>);
         var featureType = openFeatureType.MakeGenericType(propertyInfo.PropertyType);
 
-        var service = serviceProvider.GetService(featureType);
+        var service = serviceProvider.GetRequiredService(featureType);
         var featureAddReducerMethodInfo = FeatureRegistration.GetAddReducerMethod(featureType);
-        featureAddReducerMethodInfo.Invoke(service, [instance]);
+        return () => featureAddReducerMethodInfo.Invoke(service, [instance]);
     }
 
     private static object CreateReducerFromAction(Type stateType, PropertyInfo propertyInfo)

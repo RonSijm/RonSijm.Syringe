@@ -2,13 +2,20 @@
 
 namespace RonSijm.Syringe;
 
-public abstract class UpdateChildrenFeature<TState> : Feature<TState>
+public abstract class UpdateChildrenFeature<TState> : Feature<TState>, IDispatchedStateFeature
 {
     private TState _previousState;
 
     public UpdateChildrenFeature(IDispatcher dispatcher)
     {
         StateChanged += (sender, args) => { Update(dispatcher, sender, args); };
+    }
+
+    void IDispatchedStateFeature.RestoreDispatchedState(object state)
+    {
+        // This snapshot is already an action; restoring it must not dispatch it again.
+        _previousState = (TState)state;
+        ((IFeature)this).RestoreState(state);
     }
 
     private void Update(IDispatcher dispatcher, object sender, EventArgs args)

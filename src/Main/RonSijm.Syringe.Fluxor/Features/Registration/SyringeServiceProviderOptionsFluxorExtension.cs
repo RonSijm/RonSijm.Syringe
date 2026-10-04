@@ -1,5 +1,6 @@
 ﻿using Fluxor;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using RonSijm.Syringe.DependencyInjection;
 
 namespace RonSijm.Syringe;
@@ -17,13 +18,14 @@ public static class SyringeServiceProviderOptionsFluxorExtension
     public static void UseFluxor(this SyringeServiceProviderOptions providerOptions, SyringeFluxorOptions fluxorOptions)
     {
         providerOptions.WithAfterBuildExtension<WireFluxorAfterBuildExtension>();
+        providerOptions.Services.TryAddSingleton<FluxorRegistrationTracker>();
 
         if (!fluxorOptions.DisablePropertyInjection)
         {
             providerOptions.WithAfterGetService<PropertyInjectionAfterServiceExtension>();
         }
 
-        providerOptions.Services.AddSingleton<IEffect>(x => new UpdateEffect(x));
+        providerOptions.Services.Add(new ServiceDescriptor(typeof(IEffect), x => new UpdateEffect(x), fluxorOptions.ServiceLifetime));
 
         if (fluxorOptions.DisableAddingFluxorItself)
         {
@@ -32,7 +34,7 @@ public static class SyringeServiceProviderOptionsFluxorExtension
 
         if (!fluxorOptions.DisableAddingStateDispatchRestore)
         {
-            providerOptions.Services.AddSingleton<FeatureCache>();
+            providerOptions.Services.Add(new ServiceDescriptor(typeof(FeatureCache), typeof(FeatureCache), fluxorOptions.ServiceLifetime));
             fluxorOptions.AddMiddleware<RestoreDispatchedStatesMiddleware>();
         }
 

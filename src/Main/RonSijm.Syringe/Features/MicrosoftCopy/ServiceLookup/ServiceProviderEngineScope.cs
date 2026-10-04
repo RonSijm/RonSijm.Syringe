@@ -205,6 +205,27 @@ public sealed class ServiceProviderEngineScope : IServiceScope, IServiceProvider
         }
     }
 
+    internal void RollbackDisposables(int count)
+    {
+        if (_disposables == null || _disposables.Count == count)
+        {
+            return;
+        }
+        var added = _disposables.Skip(count).Reverse().ToArray();
+        _disposables.RemoveRange(count, _disposables.Count - count);
+        foreach (var disposable in added)
+        {
+            if (disposable is IAsyncDisposable asyncDisposable)
+            {
+                asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            }
+            else if (disposable is IDisposable syncDisposable)
+            {
+                syncDisposable.Dispose();
+            }
+        }
+    }
+
     private List<object> BeginDispose()
     {
         lock (Sync)

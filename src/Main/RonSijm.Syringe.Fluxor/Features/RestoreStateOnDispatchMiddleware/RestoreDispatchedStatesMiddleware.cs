@@ -28,7 +28,7 @@ public class RestoreDispatchedStatesMiddleware(FeatureCache featureCache) : Midd
 
         if (action == null || currentState == null)
         {
-            feature.RestoreState(action);
+            RestoreState(feature, action);
             return;
         }
 
@@ -37,6 +37,18 @@ public class RestoreDispatchedStatesMiddleware(FeatureCache featureCache) : Midd
             return;
         }
 
-        feature.RestoreState(action);
+        RestoreState(feature, action);
+    }
+
+    private static void RestoreState(IFeature feature, object state)
+    {
+        if (feature is IDispatchedStateFeature dispatchedFeature)
+        {
+            dispatchedFeature.RestoreDispatchedState(state);
+        }
+        else
+        {
+            feature.RestoreState(state);
+        }
     }
 }

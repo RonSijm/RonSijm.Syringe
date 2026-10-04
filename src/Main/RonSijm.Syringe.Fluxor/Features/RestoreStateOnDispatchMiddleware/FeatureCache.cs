@@ -17,13 +17,17 @@ public class FeatureCache
         }
 
         var actionFeature = _store.Features.Values.FirstOrDefault(x => x.GetStateType() == actionType);
-        _featureCache.Add(actionType, actionFeature);
+        if (actionFeature != null)
+        {
+            _featureCache.Add(actionType, actionFeature);
+        }
 
         return actionFeature;
     }
 
     public void Initialize(IStore store)
     {
+        _featureCache.Clear();
         _store = store;
     }
 }

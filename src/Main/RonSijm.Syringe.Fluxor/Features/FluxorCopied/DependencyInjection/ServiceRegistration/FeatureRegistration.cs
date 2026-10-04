@@ -139,6 +139,7 @@ internal static class FeatureRegistration
         IEnumerable<ReducerMethodInfo> reducerMethodInfosForStateType)
     {
         var featureAddReducerMethodInfo = GetAddReducerMethod(featureInstance.GetType());
+        var attached = serviceProvider.GetRequiredService<FluxorRegistrationTracker>().GetReducers(featureInstance);
 
         if (reducerClassInfosForStateType is not null)
         {
@@ -146,6 +147,7 @@ internal static class FeatureRegistration
             {
                 var reducerInstance = serviceProvider.GetService(reducerClass.ImplementingType);
                 featureAddReducerMethodInfo.Invoke(featureInstance, new[] { reducerInstance });
+                attached.Add(FluxorModuleRegistration.ReducerKey(reducerClass));
             }
         }
 
@@ -155,6 +157,7 @@ internal static class FeatureRegistration
             {
                 var reducerWrapperInstance = ReducerWrapperFactory.Create(serviceProvider, reducerMethodInfo);
                 featureAddReducerMethodInfo.Invoke(featureInstance, new[] { reducerWrapperInstance });
+                attached.Add(FluxorModuleRegistration.ReducerKey(reducerMethodInfo));
             }
         }
     }

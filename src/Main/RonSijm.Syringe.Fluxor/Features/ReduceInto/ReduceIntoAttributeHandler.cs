@@ -8,6 +8,11 @@ internal static class ReduceIntoAttributeHandler
 {
     public static void HandleReduceIntoAttribute(this PropertyInfo propertyInfo, Type stateType, IFeature service)
     {
+        propertyInfo.PrepareReduceIntoAttribute(stateType, service)();
+    }
+
+    internal static Action PrepareReduceIntoAttribute(this PropertyInfo propertyInfo, Type stateType, IFeature service)
+    {
         var openReducerType = typeof(ReduceIntoReducer<,>);
         var reduceIntoReducer = openReducerType.MakeGenericType(stateType, propertyInfo.PropertyType);
         var instance = Activator.CreateInstance(reduceIntoReducer);
@@ -25,7 +30,7 @@ internal static class ReduceIntoAttributeHandler
         var featureType = openFeatureType.MakeGenericType(stateType);
 
         var featureAddReducerMethodInfo = FeatureRegistration.GetAddReducerMethod(featureType);
-        featureAddReducerMethodInfo.Invoke(service, [instance]);
+        return () => featureAddReducerMethodInfo.Invoke(service, [instance]);
     }
 
 

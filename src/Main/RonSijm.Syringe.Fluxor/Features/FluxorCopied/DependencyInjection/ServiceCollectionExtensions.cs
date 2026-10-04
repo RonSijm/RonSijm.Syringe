@@ -19,8 +19,6 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddFluxorLibrary(this IServiceCollection services, SyringeFluxorOptions options)
 	{
-        options.WithLifetime(StoreLifetime.Singleton);
-
         // Register all middleware types with dependency injection
         foreach (var middlewareType in options.MiddlewareTypes)
         {

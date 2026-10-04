@@ -17,6 +17,14 @@ internal static class EffectMethodRegistration
 				.Distinct();
 
 		foreach (var hostClassType in hostClassTypes)
+		{
 			services.Add(hostClassType, options);
+		}
+
+		// Dynamic builds need the method metadata as well as its host service.
+		foreach (var info in effectMethodInfos)
+		{
+			services.AddSingleton(info);
+		}
 	}
 }
